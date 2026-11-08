@@ -1,0 +1,1933 @@
+<title>Davao E-Magazine Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a fixed cut-paper map stage sits behind everything; short summary cards scroll over it,
+   alternating sides, and the camera frames each province in the open half of the screen. */
+:root{
+  /* pastel palette; land + water stay the colours you picked */
+  --paper:#F8F3EA; --card:#FFFCF7; --edge:#FFFDF8; --ink:#34303A; --ink-2:#6A6474; --rule:#E6DDCF;
+  --accent:#B9D4EE; --on-accent:#2C2932; --focus:#4C7398;
+  --sea:#8FC1DC; --sea-deep:#7FB3D0; --rest:#EFE5D2;
+  --leaf:#5E9E6E; --gold:#C9963A; --tide:#3F949C; --coral:#D4694F; --plum:#8A6BB8; --clay:#B07A52;
+  --shadow:rgba(90,70,60,.18); --halo:rgba(255,252,247,.9);
+  --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+  --ease-paper:cubic-bezier(.65,0,.25,1);
+  --step--1:.8125rem; --step-0:1rem; --step-1:1.2rem; --step-2:1.75rem; --step-3:2.6rem; --step-4:clamp(2.5rem,6.4vw,5rem);
+}
+/* the map land and water keep their colours in both themes; the interface goes dark */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#1F2128; --card:#282B34; --edge:#DDD5C7; --ink:#F3EEE6; --ink-2:#B8B1C2; --rule:#3A3E48;
+  --accent:#A9C6E4; --on-accent:#1F2128; --focus:#A9C6E4; --sea-deep:#6FA3C2;
+  --leaf:#6FA87C; --gold:#CFA048; --tide:#4F9FA6; --coral:#D27860; --plum:#9479BF; --clay:#B88660;
+  --shadow:rgba(0,0,0,.45); --halo:rgba(40,43,52,.9); color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --paper:#1F2128; --card:#282B34; --edge:#DDD5C7; --ink:#F3EEE6; --ink-2:#B8B1C2; --rule:#3A3E48;
+  --accent:#A9C6E4; --on-accent:#1F2128; --focus:#A9C6E4; --sea-deep:#6FA3C2;
+  --leaf:#6FA87C; --gold:#CFA048; --tide:#4F9FA6; --coral:#D27860; --plum:#9479BF; --clay:#B88660;
+  --shadow:rgba(0,0,0,.45); --halo:rgba(40,43,52,.9); color-scheme:dark; }
+
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{background:var(--sea);color:var(--ink);font-family:var(--f-body);font-size:var(--step-0);line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.025em}
+p{margin:0}
+a{color:var(--focus)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:2px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+
+/* ---------- stage ---------- */
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+#flat{position:fixed;inset:0;z-index:0;background:var(--sea)}
+#flat svg{width:100%;height:100%;display:block}
+#labels{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;will-change:transform,opacity;
+  font:600 11px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+  padding:4px 7px;border-radius:2px;background:var(--halo)}
+.lbl.country{font:500 12px/1 var(--f-display);letter-spacing:.38em}
+.lbl.land{font:italic 400 12px/1 var(--f-body);letter-spacing:.02em;text-transform:none;color:var(--ink-2)}
+.lbl.people{font:600 15px/1 var(--f-display);letter-spacing:-.01em;text-transform:none;background:var(--card);
+  border:1px solid var(--rule);padding:6px 9px;box-shadow:0 6px 14px -8px var(--shadow)}
+
+/* ---------- top bar ---------- */
+.bar{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:6;display:flex;align-items:center;gap:16px;
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:linear-gradient(var(--halo),transparent)}
+.mark{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 14px/1 var(--f-display);letter-spacing:-.01em;white-space:nowrap}
+.mark i{width:22px;height:22px;display:block;background:linear-gradient(135deg,var(--leaf) 0 33%,var(--gold) 33% 55%,var(--tide) 55% 75%,var(--coral) 75%);
+  clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+.rail{display:flex;gap:2px;margin-inline:auto;counter-reset:ch}
+.rail a{counter-increment:ch;text-decoration:none;color:var(--ink-2);font:500 12px/1 var(--f-body);padding:7px 9px;border-radius:2px;white-space:nowrap}
+.rail a::before{content:counter(ch);font:600 10px/1 var(--f-display);margin-right:5px;opacity:.6}
+.rail a[aria-current="true"]{color:var(--ink);background:var(--card);box-shadow:0 0 0 1px var(--rule)}
+.tools{display:flex;gap:8px;align-items:center;margin-left:auto}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:2px;background:var(--card);overflow:hidden}
+.seg button{all:unset;cursor:pointer;font:600 11px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;padding:8px 10px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.seg button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+@media (max-width:1060px){ .rail{display:none} }
+@media (max-width:520px){ .mark span{display:none} }
+
+/* ---------- sections ---------- */
+main{position:relative;z-index:2}
+.sec{position:relative;min-height:135vh;display:flex;align-items:center;pointer-events:none;
+  padding-block:16vh;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sec > *{pointer-events:auto}
+.sec[data-side="right"]{justify-content:flex-end}
+.panel{position:relative;width:min(100%,29rem);background:var(--card);border:1px solid var(--rule);padding:clamp(20px,2.6vw,30px);
+  box-shadow:0 1px 0 var(--edge) inset,0 28px 50px -30px var(--shadow),0 2px 0 0 var(--rule);border-radius:2px;min-width:0}
+.sec[data-side="left"] .panel{margin-left:clamp(0px,4vw,56px)}
+.sec[data-side="right"] .panel{margin-right:clamp(0px,4vw,56px)}
+.eyebrow{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;font:600 var(--step--1)/1.2 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.eyebrow .num{font:600 12px/1 var(--f-display);letter-spacing:.02em;color:var(--ink)}
+.sw{width:14px;height:14px;background:var(--pc,var(--rest));display:inline-block;clip-path:polygon(0 18%,100% 0,86% 100%,8% 86%)}
+.h-sec{font-size:var(--step-3);line-height:1;margin-top:14px;font-weight:600}
+.lede{font-size:var(--step-1);line-height:1.5;margin-top:14px;max-width:34ch}
+.note{font-size:var(--step--1);color:var(--ink-2);margin-top:12px}
+.soon{display:inline-flex;align-items:center;gap:8px;font:700 11px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);border:1px dashed var(--ink-2);padding:6px 9px;border-radius:2px}
+.soon::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--coral)}
+.skel{display:grid;gap:9px;margin-top:16px}
+.skel i{display:block;height:9px;border-radius:2px;background:var(--rule)}
+.skel i:nth-child(1){width:96%}.skel i:nth-child(2){width:84%}.skel i:nth-child(3){width:91%}.skel i:nth-child(4){width:58%}.skel i:nth-child(5){width:88%}.skel i:nth-child(6){width:70%}
+
+/* cover */
+.sec-cover{justify-content:center;text-align:center;min-height:120vh;align-items:flex-start;padding-top:max(22vh,120px)}
+.cover{position:relative;max-width:min(100%,62rem);display:grid;justify-items:center;gap:18px}
+/* no glow behind the title: the map under the cover is light in both themes, so its text keeps a fixed dark ink */
+.cover{--ink:#2E2A33;--ink-2:#3F3A47;--card:#FFFCF7;--paper:#F8F3EA;--rule:#E6DDCF;--on-accent:#2C2932;color:var(--ink)}
+.cover .kicker{font:600 12px/1.3 var(--f-body);letter-spacing:.24em;text-transform:uppercase;color:var(--ink-2)}
+.cover h1{font-size:clamp(2.7rem,8.4vw,7.2rem);line-height:.9;font-weight:700;letter-spacing:-.045em;max-width:none;white-space:pre-line}
+.cover .sub{font-size:var(--step-1);max-width:42ch;line-height:1.45}
+.cover .members{font-size:var(--step--1);color:var(--ink-2);letter-spacing:.03em;line-height:1.6;max-width:62ch;white-space:pre-line;text-wrap:balance}
+.cover-actions{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:8px}
+.lang-big{display:inline-flex;gap:6px}
+.lang-big button{font:600 13px/1 var(--f-body);padding:10px 16px;border-radius:2px;border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer}
+.lang-big button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+.scrollcue{margin-top:6vh;font:600 11px/1 var(--f-body);letter-spacing:.2em;text-transform:uppercase;color:var(--ink);display:grid;justify-items:center;gap:10px;text-shadow:0 0 4px var(--card),0 0 12px var(--card)}
+.scrollcue::after{content:"";width:1px;height:42px;background:var(--ink);transform-origin:top;animation:cue 2.2s var(--ease-paper) infinite}
+@keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+.rise{animation:rise .9s var(--ease-paper) both}
+.rise:nth-child(2){animation-delay:.08s}.rise:nth-child(3){animation-delay:.16s}.rise:nth-child(4){animation-delay:.24s}.rise:nth-child(5){animation-delay:.32s}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* buttons */
+.btn{font:700 14px/1 var(--f-body);letter-spacing:.01em;padding:14px 20px;border-radius:2px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:10px;transition:transform .25s var(--ease-paper),box-shadow .25s var(--ease-paper)}
+.btn-primary{--lip:color-mix(in srgb,var(--accent) 55%,var(--ink));background:var(--accent);color:var(--on-accent);box-shadow:0 3px 0 var(--lip)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--lip)}
+.btn-primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--lip)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn-ghost:hover{background:var(--paper)}
+.btn-sm{padding:10px 14px;font-size:13px}
+.btn-explore{font-size:17px;padding:18px 34px;letter-spacing:.04em}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* people summary cards */
+.pname{font-size:var(--step-4);line-height:.88;font-weight:700;letter-spacing:-.05em;margin:16px 0 0;overflow-wrap:anywhere}
+.sum{margin-top:16px}
+.inside{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.inside p{font:700 11px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.chips li{font-size:12px;font-weight:600;padding:5px 9px;border:1px solid var(--rule);border-radius:999px;background:var(--paper)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+
+/* compare */
+.sec-wide{justify-content:center}
+.sec-wide .panel{width:min(100%,64rem)}
+.grid-wrap{overflow-x:auto;margin-top:22px;border:1px solid var(--rule)}
+table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:var(--step--1)}
+.cmp th,.cmp td{border-bottom:1px solid var(--rule);padding:12px;text-align:left;vertical-align:top}
+.cmp thead th{font:600 15px/1.1 var(--f-display);letter-spacing:-.01em;background:var(--paper)}
+.cmp thead th span{display:block;font:500 10px/1.2 var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin-top:4px}
+.cmp thead th i{display:block;height:4px;margin:-12px -12px 10px;background:var(--pc)}
+.cmp tbody th{font-weight:700;width:18%}
+.cmp td::before{content:"";display:block;height:7px;width:82%;background:var(--rule);border-radius:2px;margin-bottom:7px}
+.cmp td::after{content:"";display:block;height:7px;width:55%;background:var(--rule);border-radius:2px}
+
+/* refs / respect */
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:clamp(20px,4vw,48px);margin-top:20px}
+.two > *{min-width:0}
+@media (max-width:760px){ .two{grid-template-columns:1fr} }
+.reflist{list-style:none;margin:0;padding:0;display:grid;gap:14px;font-size:var(--step--1)}
+.reflist li{padding-left:2em;text-indent:-2em;color:var(--ink-2)}
+.reflist b{color:var(--ink);font-weight:600}
+.respect{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:r}
+.respect li{counter-increment:r;display:grid;grid-template-columns:28px 1fr;gap:8px;font-size:var(--step--1)}
+.respect li::before{content:counter(r);font:600 13px/1.5 var(--f-display);border-top:2px solid var(--ink);padding-top:2px}
+.h-sub{font:700 11px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin-bottom:14px}
+
+/* style sheet */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;margin-top:16px}
+.swatch{border:1px solid var(--rule);background:var(--paper);border-radius:2px;overflow:hidden;font-size:11px}
+.swatch b{display:block;height:54px;background:var(--c)}
+.swatch span{display:block;padding:7px 8px 8px;line-height:1.35}
+.swatch code{font:500 10.5px/1 ui-monospace,Consolas,monospace;color:var(--ink-2)}
+.specimen{display:grid;gap:18px;margin-top:18px}
+.specimen .d1{font:700 clamp(2.4rem,6vw,4.4rem)/.9 var(--f-display);letter-spacing:-.05em}
+.specimen .d2{font:500 var(--step-2)/1.1 var(--f-display);letter-spacing:-.02em}
+.specimen .b1{max-width:62ch}
+.specimen small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:6px}
+.motion{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px;font-size:var(--step--1)}
+.motion li{display:grid;grid-template-columns:minmax(0,11rem) 1fr;gap:12px;border-top:1px solid var(--rule);padding-top:10px}
+@media (max-width:560px){ .motion li{grid-template-columns:1fr;gap:2px} }
+
+/* badge & toast */
+.badge{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  font:700 10.5px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;background:var(--accent);color:var(--on-accent);padding:8px 10px;border-radius:2px}
+.toast{position:fixed;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:min(22rem,calc(100% - 32px));
+  background:var(--card);border:1px solid var(--rule);padding:12px 14px;font-size:var(--step--1);box-shadow:0 18px 30px -18px var(--shadow)}
+
+/* iris */
+.iris{position:fixed;inset:0;z-index:20;background:var(--paper);clip-path:circle(0% at 50% 50%);pointer-events:none}
+
+/* ---------- diorama reading view ---------- */
+.dio{position:fixed;inset:0;z-index:15;touch-action:none;cursor:grab}
+.dio:active{cursor:grabbing}
+.dio.flatmode{background:var(--paper);cursor:auto}
+body.dio-open main,body.dio-open #labels,body.dio-open .badge{visibility:hidden}
+body.dio-open .bar{display:none}
+.dio-art{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));
+  width:min(30rem,calc(100% - 32px));overflow-y:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--rule);
+  box-shadow:0 30px 60px -30px var(--shadow);border-radius:2px;cursor:auto;touch-action:pan-y}
+.dio-art::after{content:"";display:block;height:45vh}
+.art-head{position:sticky;top:0;z-index:2;background:var(--card);padding:18px 22px 12px;border-bottom:1px solid var(--rule)}
+.art-head .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.art-head h2{font-size:clamp(2rem,4.6vw,3.2rem);line-height:.9;font-weight:700;letter-spacing:-.05em;margin-top:10px}
+.tnav{display:flex;gap:4px;margin-top:14px;overflow-x:auto;scrollbar-width:none}
+.tnav::-webkit-scrollbar{display:none}
+.tnav button{all:unset;cursor:pointer;flex:none;font:600 12px/1 var(--f-body);padding:7px 9px;border-radius:999px;color:var(--ink-2);border:1px solid transparent}
+.tnav button[aria-current="true"]{color:var(--ink);border-color:var(--ink);background:var(--paper)}
+.tnav button:focus-visible{outline:3px solid var(--focus)}
+.topic{padding:26px 22px 8px;scroll-margin-top:150px}
+.topic + .topic{border-top:1px solid var(--rule);margin-top:18px}
+.t-num{font:600 12px/1 var(--f-display);color:var(--ink-2);letter-spacing:.04em}
+.topic h3{font-size:var(--step-2);font-weight:600;line-height:1.05;margin:8px 0 14px}
+.film-ctl{display:flex;gap:8px;margin-top:10px}
+.player{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px;border:1px solid var(--rule);background:var(--paper);border-radius:2px}
+.player .pbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--rule);color:var(--ink-2);flex:none}
+.player .bars{flex:1;height:26px;background:repeating-linear-gradient(90deg,var(--rule) 0 3px,transparent 3px 6px)}
+.player small{font-size:11px;color:var(--ink-2);line-height:1.3;max-width:16ch}
+.srclist{margin:14px 0 0;padding-left:18px;color:var(--ink-2);font-size:var(--step--1);display:grid;gap:6px}
+/* "Now reading" is pinned in the open area beside the column, so it never moves with the model */
+.topic-tag{--col:min(30rem,calc(100% - 32px));position:absolute;top:calc(20px + env(safe-area-inset-top,0px));
+  left:calc(var(--col) + 32px + (100% - var(--col) - 32px) / 2);transform:translateX(-50%);text-align:center;
+  pointer-events:none;font:700 clamp(18px,2.2vw,26px)/1 var(--f-display);letter-spacing:-.02em;color:var(--ink);
+  background:var(--halo);padding:8px 14px;border-radius:2px;white-space:nowrap}
+.topic-tag small{display:block;font:700 10px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+.dio-tag{position:absolute;left:0;top:0;pointer-events:none;font:600 12px/1.2 var(--f-body);background:var(--card);border:1px dashed var(--ink-2);padding:7px 9px;border-radius:2px;white-space:nowrap}
+.dio-hint{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));font:600 11px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);background:var(--halo);padding:7px 10px;border-radius:2px;white-space:nowrap}
+.dio-flat{position:absolute;top:calc(24px + env(safe-area-inset-top,0px));bottom:30px;right:max(16px,env(safe-area-inset-right,0px));left:calc(min(30rem,calc(100% - 32px)) + 48px);display:grid;place-items:center}
+.dio-flat svg{width:100%;height:100%}
+@media (max-width:760px){
+  .dio-art{top:auto;left:0;right:0;width:auto;height:54%;bottom:0;border-radius:12px 12px 0 0;border-bottom:0}
+  .dio-hint{display:none}
+  .topic-tag{left:50%;top:calc(14px + env(safe-area-inset-top,0px))}
+  .dio-flat{left:16px;right:16px;bottom:56%;top:calc(16px + env(safe-area-inset-top,0px))}
+  .art-head{padding:14px 16px 10px}.topic{padding:22px 16px 8px}
+}
+
+/* ---------- cut-paper story film ---------- */
+.film{position:relative;aspect-ratio:16/9;max-width:100%;overflow:hidden;border:1px solid var(--rule);border-radius:2px;
+  --fc:var(--leaf);
+  --f-far:color-mix(in srgb,var(--fc) 34%,var(--paper));
+  --f-mid:color-mix(in srgb,var(--fc) 72%,var(--paper));
+  --f-near:color-mix(in srgb,var(--fc) 78%,var(--ink));
+  background:linear-gradient(color-mix(in srgb,var(--sea) 70%,var(--paper)),var(--paper) 78%)}
+.film svg{display:block;width:50%;height:100%;flex:none}
+.film .fl{position:absolute;left:0;bottom:0;width:200%;display:flex;animation:pan linear infinite}
+.film .far{height:62%;animation-duration:70s}.film .far path{fill:var(--f-far)}
+.film .mid{height:44%;animation-duration:38s;filter:drop-shadow(0 -3px 4px var(--shadow))}.film .mid path{fill:var(--f-mid)}
+.film .near{height:24%;animation-duration:18s;filter:drop-shadow(0 -4px 6px var(--shadow))}.film .near path{fill:var(--f-near)}
+.film .static{animation:none}
+@keyframes pan{to{transform:translateX(-50%)}}
+.film .orb{position:absolute;width:11%;aspect-ratio:1;border-radius:50%;left:68%;top:18%;background:color-mix(in srgb,var(--gold) 55%,var(--edge));animation:orb 16s var(--ease-paper) infinite alternate}
+@keyframes orb{from{transform:translateY(40%)}to{transform:translateY(-20%)}}
+.film .seab{position:absolute;left:0;right:0;bottom:0;height:20%;background:repeating-linear-gradient(0deg,transparent 0 9px,color-mix(in srgb,var(--edge) 45%,transparent) 9px 10px),var(--sea-deep);animation:waves 6s linear infinite}
+@keyframes waves{to{background-position:0 40px,0 0}}
+.film .fall{position:absolute;left:61%;width:2.4%;bottom:30%;height:30%;background:repeating-linear-gradient(180deg,var(--edge) 0 10px,color-mix(in srgb,var(--sea) 80%,var(--edge)) 10px 20px);animation:fall 1.2s linear infinite}
+@keyframes fall{to{background-position:0 20px}}
+.film .river{position:absolute;left:-5%;right:-5%;bottom:5%;height:7%;background:var(--sea-deep);border-radius:50%;transform:rotate(-2deg)}
+.film .birds span{position:absolute;width:22px;height:8px;left:-6%;top:var(--y);animation:fly var(--d) linear infinite;animation-delay:var(--dl)}
+.film .birds span::before,.film .birds span::after{content:"";position:absolute;top:0;width:11px;height:2px;background:var(--ink)}
+.film .birds span::before{left:0;transform-origin:100% 50%;transform:rotate(18deg);animation:flap .7s ease-in-out infinite alternate}
+.film .birds span::after{right:0;transform-origin:0 50%;transform:rotate(-18deg);animation:flap2 .7s ease-in-out infinite alternate}
+@keyframes fly{to{transform:translateX(60rem)}}
+@keyframes flap{to{transform:rotate(-8deg)}}
+@keyframes flap2{to{transform:rotate(8deg)}}
+.film .cap{position:absolute;left:4%;bottom:6%;max-width:88%;background:var(--card);color:var(--ink);font-size:12px;line-height:1.4;padding:7px 10px;border-radius:2px}
+.film.paused *,.film.paused{animation-play-state:paused !important}
+
+@media (max-width:640px){
+  .sec{align-items:flex-end;min-height:150vh}
+  .sec[data-side] .panel{margin-inline:0}
+  .sec-cover{align-items:flex-start;min-height:115vh;padding-top:110px}
+}
+@media (prefers-reduced-motion: reduce){ .rise,.scrollcue::after{animation:none} .btn{transition:none} }
+</style>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+<div id="flat" aria-hidden="true" hidden></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header class="bar">
+  <a class="mark" href="#cover"><i aria-hidden="true"></i><span>Davao Region e-mag</span></a>
+  <nav class="rail" aria-label="Chapters">
+    <a href="#cover" data-ch="cover" data-i18n="ch_cover">Cover</a>
+    <a href="#intro" data-ch="intro" data-i18n="ch_intro">Introduction</a>
+    <a href="#p-norte" data-ch="peoples" data-i18n="ch_peoples">Peoples</a>
+    <a href="#compare" data-ch="compare" data-i18n="ch_compare">Comparison</a>
+    <a href="#significance" data-ch="sig" data-i18n="ch_sig">Significance</a>
+    <a href="#conclusion" data-ch="concl" data-i18n="ch_concl">Conclusion</a>
+    <a href="#references" data-ch="refs" data-i18n="ch_refs">References</a>
+  </nav>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="Map style">
+      <button type="button" id="mode-3d" data-mode="3d" aria-pressed="true" data-i18n="mode3d">3D map</button>
+      <button type="button" id="mode-flat" data-mode="flat" aria-pressed="false" data-i18n="modeflat">Flat map</button>
+    </div>
+    <div class="seg" role="group" aria-label="Language">
+      <button type="button" id="lang-en-s" data-lang-btn="en" aria-pressed="true">EN</button>
+      <button type="button" id="lang-fil-s" data-lang-btn="fil" aria-pressed="false">FIL</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="sec sec-cover" id="cover" data-world="cover" data-ch="cover">
+    <div class="cover">
+      <p class="kicker rise" data-i18n="kicker">An e-magazine · Five peoples · Five provinces</p>
+      <h1 class="rise" data-i18n="title">The Indigenous
+Peoples of
+Region XI</h1>
+      <p class="sub rise" data-i18n="subtitle">Ata Manobo, Mansaka, Mandaya, Tagakaulo and Bagobo-Tagabawa, each in their own name.</p>
+      <div class="cover-actions rise">
+        <button type="button" class="btn btn-primary btn-explore" id="explore"><span data-i18n="explore">Explore</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3 8.5 8 13.5 13 8.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+        <div class="lang-big" role="group" aria-label="Language">
+          <button type="button" id="lang-en" data-lang-btn="en" aria-pressed="true">English</button>
+          <button type="button" id="lang-fil" data-lang-btn="fil" aria-pressed="false">Filipino</button>
+        </div>
+      </div>
+      <p class="members rise" data-i18n="members">Prepared by
+Krizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan</p>
+      <p class="scrollcue" data-i18n="scroll">Scroll to fly in</p>
+    </div>
+  </section>
+
+  <section class="sec" id="intro" data-world="intro" data-side="left" data-ch="intro">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">I</span><span data-i18n="ch_intro">Introduction</span></p>
+      <h2 class="h-sec" data-i18n="intro_h">Below the clouds, the Davao Gulf</h2>
+      <p class="lede" data-i18n="intro_p">A short overview of the five peoples and their provinces.</p>
+      <div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>
+    </article>
+  </section>
+
+  <section class="sec" id="region" data-world="region" data-side="right" data-ch="intro">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">II</span><span data-i18n="region_k">Region XI</span></p>
+      <h2 class="h-sec" data-i18n="region_h">Five provinces around one gulf</h2>
+      <p class="lede" data-i18n="region_p">The region lifts apart like puzzle pieces so each province reads on its own.</p>
+      <p class="note" data-i18n="region_n">Map colours belong to the map. None are taken from any people's designs.</p>
+    </article>
+  </section>
+
+  <div id="peoples-slot"></div>
+
+  <section class="sec sec-wide" id="compare" data-world="compare" data-ch="compare">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">IV</span><span data-i18n="ch_compare">Comparison</span></p>
+      <h2 class="h-sec" data-i18n="compare_h">Five peoples, side by side</h2>
+      <p class="lede" style="max-width:52ch" data-i18n="compare_p">Each cell will hold a cited example rather than a summary label.</p>
+      <div class="grid-wrap" tabindex="0" role="region" aria-label="Comparison grid"><table class="cmp" id="cmp"></table></div>
+    </article>
+  </section>
+
+  <section class="sec" id="significance" data-world="significance" data-side="left" data-ch="sig">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">V</span><span data-i18n="ch_sig">Cultural significance</span></p>
+      <h2 class="h-sec" data-i18n="sig_h">What the stories and songs carry</h2>
+      <p class="lede" data-i18n="sig_p">Identity, knowledge and community ties.</p>
+      <div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>
+    </article>
+  </section>
+
+  <section class="sec" id="conclusion" data-world="conclusion" data-side="right" data-ch="concl">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">VI</span><span data-i18n="ch_concl">Conclusion</span></p>
+      <h2 class="h-sec" data-i18n="concl_h">Back to the whole archipelago</h2>
+      <p class="lede" data-i18n="concl_p">The provinces settle back into place.</p>
+      <div class="skel" aria-hidden="true"><i></i><i></i></div>
+    </article>
+  </section>
+
+  <section class="sec sec-wide" id="references" data-world="references" data-ch="refs">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">VII</span><span data-i18n="ch_refs">References</span></p>
+      <h2 class="h-sec" data-i18n="refs_h">References &amp; protocols</h2>
+      <div class="two">
+        <div>
+          <p class="h-sub" data-i18n="refs_sub">References · APA 7</p>
+          <ol class="reflist">
+            <li><b>Author, A. A.</b> (Year). <i>Title of the work</i>. Publisher. https://doi.org/…</li>
+            <li><b>Agency or community organisation.</b> (Year). <i>Title of the report</i>. https://…</li>
+            <li><b>Author, B. B., &amp; Author, C. C.</b> (Year). Title of the article. <i>Journal Name, volume</i>(issue), pages.</li>
+          </ol>
+          <p class="note" data-i18n="refs_p">Format examples only. Real entries come from the source register.</p>
+        </div>
+        <div>
+          <p class="h-sub" data-i18n="respect_h">Respect &amp; Protocols</p>
+          <ol class="respect">
+            <li><span data-i18n="r1">Peoples are named as they name themselves.</span></li>
+            <li><span data-i18n="r2">Every claim on a people's page is cited.</span></li>
+            <li><span data-i18n="r3">Nothing is invented: no villages, people or patterns.</span></li>
+            <li><span data-i18n="r4">Sacred or restricted material stays out.</span></li>
+          </ol>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="sec sec-wide" id="style" data-world="references" data-ch="refs">
+    <article class="panel">
+      <p class="eyebrow"><span class="num">✦</span><span data-i18n="style_k">Mockup only</span></p>
+      <h2 class="h-sec" data-i18n="style_h">Look &amp; feel sheet</h2>
+      <p class="h-sub" style="margin-top:22px" data-i18n="st_colors">Colour</p>
+      <div class="swatches" id="swatches"></div>
+      <p class="h-sub" style="margin-top:28px" data-i18n="st_type">Type</p>
+      <div class="specimen">
+        <div><small>Space Grotesk 700 · headlines</small><div class="d1">Mansaka</div></div>
+        <div><small>Space Grotesk 500 · section titles</small><div class="d2">Five provinces around one gulf</div></div>
+        <div class="b1"><small>Plus Jakarta Sans 400 · body, labels, buttons</small>Body text sits at 16px with a 1.65 line height and about 65 characters per line, so a teacher can read a full chapter on a phone without zooming.</div>
+      </div>
+      <p class="h-sub" style="margin-top:28px" data-i18n="st_motion">Motion</p>
+      <ul class="motion">
+        <li><b>Scroll camera</b><span>Blends between section "worlds" and eases toward the blend. The province is framed in the half of the screen the card leaves open.</span></li>
+        <li><b>Terrain</b><span>Contour sheets every 200 m, traced with d3-contour, stacked like cut card. Mt. Apo is 15 sheets tall.</span></li>
+        <li><b>Diorama entry</b><span>The camera dives at the pin while a paper iris closes (650 ms), then opens on the diorama.</span></li>
+        <li><b>Topic spin</b><span>Wind-up, a fast four-turn whip with stretch, the model swaps mid-spin with a paper "poof", then a squash-and-wobble settle (1.4 s).</span></li>
+        <li><b>Reduced motion</b><span>Flat map, no flights, topic models swap without spinning, films stay on a still frame.</span></li>
+      </ul>
+    </article>
+  </section>
+</main>
+
+<p class="badge" data-i18n="badge">Mockup · look &amp; feel only</p>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="iris" id="iris" aria-hidden="true"></div>
+
+<div class="dio" id="dio" role="dialog" aria-modal="true" aria-labelledby="dio-name" hidden>
+  <div class="dio-flat" id="dio-flat" hidden></div>
+  <div class="topic-tag" id="topic-tag" aria-hidden="true"><small id="topic-tag-n"></small><span id="topic-tag-t"></span></div>
+  <div class="dio-tag" id="dio-tag" data-i18n="dio_tag" hidden>Instrument stand · empty</div>
+  <p class="dio-hint" data-i18n="dio_drag">Drag to turn the diorama</p>
+  <article class="dio-art" id="dio-art" aria-label="Chapter"></article>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(() => {
+'use strict';
+const root = document.documentElement;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const TAU = Math.PI * 2;
+
+/* ======================= i18n ======================= */
+const TOPICS = ['identity','myth','meaning','music','performance','significance','sources'];
+const T = {
+  en: {
+    kicker:'An e-magazine · Five peoples · Five provinces', title:'The Indigenous\nPeoples of\nRegion XI',
+    subtitle:'Ata Manobo, Mansaka, Mandaya, Tagakaulo and Bagobo-Tagabawa, each in their own name.',
+    explore:'Explore', members:'Prepared by\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Scroll to fly in',
+    ch_cover:'Cover', ch_intro:'Introduction', ch_peoples:'Peoples', ch_compare:'Comparison', ch_sig:'Cultural significance', ch_concl:'Conclusion', ch_refs:'References',
+    intro_h:'Below the clouds, the Davao Gulf', intro_p:'A short overview of the five peoples and their provinces.',
+    region_k:'Region XI', region_h:'Five provinces around one gulf', region_p:'The region lifts apart like puzzle pieces so each province reads on its own.',
+    region_n:"Map colours belong to the map. None are taken from any people's designs.",
+    province:'Province', coming:'Coming soon', sum_note:'Summary · two or three sentences from the chapter.',
+    inside:'Inside the diorama', enter_dio:'Enter diorama', back_map:'Back to the map',
+    compare_h:'Five peoples, side by side', compare_p:'Each cell will hold a cited example rather than a summary label.',
+    row_themes:'Narrative themes', row_beliefs:'Beliefs & values', row_music:'Musical expressions', row_context:'Performance contexts', row_function:'Cultural functions',
+    sig_h:'What the stories and songs carry', sig_p:'Identity, knowledge and community ties.',
+    concl_h:'Back to the whole archipelago', concl_p:'The provinces settle back into place.',
+    refs_h:'References & protocols', refs_sub:'References · APA 7', refs_p:'Format examples only. Real entries come from the source register.',
+    respect_h:'Respect & Protocols', r1:'Peoples are named as they name themselves.', r2:"Every claim on a people's page is cited.",
+    r3:'Nothing is invented: no villages, people or patterns.', r4:'Sacred or restricted material stays out. Where a source is missing, the page says Coming soon.',
+    style_k:'Mockup only', style_h:'Look & feel sheet', st_colors:'Colour', st_type:'Type', st_motion:'Motion',
+    badge:'Mockup · look & feel only', dio_kicker:'Diorama', dio_drag:'Drag to turn the diorama', dio_tag:'Instrument stand · empty until sourced',
+    now:'Now reading',
+    tp_identity:'Identity', tp_myth:'Myth & story', tp_meaning:'Meaning', tp_music:'Music', tp_performance:'Performance', tp_significance:'Significance', tp_sources:'Sources',
+    tn_identity:'Who the people are, in their own name, and the land they live on. Cited.',
+    tn_myth:'One specifically attributed myth or traditional narrative, with its source named.',
+    tn_meaning:"What the story means. The source's account is kept apart from our interpretation.",
+    tn_music:'Songs and instruments documented for this people. Audio appears only where reuse is permitted.',
+    tn_performance:'When, where and by whom the music is performed.',
+    tn_significance:'How the stories and music carry identity, values and community life.',
+    tn_sources:'Two substantive sources, linked to the references list.',
+    film_note:'Landscape silhouettes only. Figures from the story are drawn after the text is sourced.',
+    fig_note:'The 3D figure is a stylised, faceless model of the attire and ornaments in a reference photo. It will be checked against documented sources, and ideally the community, before publishing.',
+    play:'Play', pause:'Pause', restart:'Restart', player:'No recording yet',
+    music_note:'Sounds made in the browser will be labelled as not community recordings. Nothing autoplays.',
+    src_row:'Author (Year) · from the source register',
+    cap1:'Scene 1 · Opening. Narration will come from the cited story.', cap2:'Scene 2 · Turning point. Narration to come.', cap3:'Scene 3 · Closing. Narration to come.',
+    mode3d:'3D map', modeflat:'Flat map',
+    t_rm:'Showing the flat map because reduced motion is on. Switch to 3D at the top.', t_gl:"Showing the flat map because this device can't draw 3D.",
+    t_slow:'Switched to the flat map because 3D was running slowly.',
+    l_luzon:'Luzon', l_visayas:'Visayas', l_mindanao:'Mindanao', l_davao:'Davao Region', l_phsea:'Philippine Sea', l_gulf:'Davao Gulf', l_apo:'Mt. Apo · 2,954 m', l_ham:'Mt. Hamiguitan', l_samal:'Samal Island', l_city:'Davao City'
+  },
+  fil: {
+    kicker:'Isang e-magasin · Limang katutubong pamayanan · Limang lalawigan', title:'Ang mga Katutubong\nPamayanan ng\nRehiyon XI',
+    subtitle:'Ata Manobo, Mansaka, Mandaya, Tagakaulo at Bagobo-Tagabawa, sa sarili nilang pangalan.',
+    explore:'Galugarin', members:'Inihanda nina\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Mag-scroll para lumipad papasok',
+    ch_cover:'Pabalat', ch_intro:'Panimula', ch_peoples:'Mga Pamayanan', ch_compare:'Paghahambing', ch_sig:'Kahalagahang Pangkultura', ch_concl:'Konklusyon', ch_refs:'Mga Sanggunian',
+    intro_h:'Sa ilalim ng mga ulap, ang Golpo ng Davao', intro_p:'Maikling pagpapakilala sa limang pamayanan at sa kanilang mga lalawigan.',
+    region_k:'Rehiyon XI', region_h:'Limang lalawigan sa paligid ng iisang golpo', region_p:'Naghihiwalay ang rehiyon na parang piraso ng puzzle para malinaw ang bawat lalawigan.',
+    region_n:'Para sa mapa lamang ang mga kulay. Walang kinuha sa disenyo ng alinmang pamayanan.',
+    province:'Lalawigan', coming:'Malapit na', sum_note:'Buod · dalawa o tatlong pangungusap mula sa kabanata.',
+    inside:'Sa loob ng diorama', enter_dio:'Pumasok sa diorama', back_map:'Bumalik sa mapa',
+    compare_h:'Limang pamayanan, magkakatabi', compare_p:'Bawat kahon ay maglalaman ng halimbawang may sanggunian.',
+    row_themes:'Mga tema ng salaysay', row_beliefs:'Paniniwala at pagpapahalaga', row_music:'Mga anyo ng musika', row_context:'Konteksto ng pagtatanghal', row_function:'Gampaning pangkultura',
+    sig_h:'Ang dinadala ng mga kuwento at awit', sig_p:'Pagkakakilanlan, kaalaman at ugnayan ng pamayanan.',
+    concl_h:'Pabalik sa buong kapuluan', concl_p:'Babalik sa puwesto ang mga lalawigan.',
+    refs_h:'Mga sanggunian at protokol', refs_sub:'Mga Sanggunian · APA 7', refs_p:'Halimbawa ng format lamang. Ang totoong entry ay mula sa talaan ng pinagkunan.',
+    respect_h:'Paggalang at mga Protokol', r1:'Tinatawag ang mga pamayanan sa pangalang sila mismo ang gumagamit.', r2:'May sanggunian ang bawat pahayag sa pahina ng pamayanan.',
+    r3:'Walang inimbento: walang gawa-gawang nayon, tao o disenyo.', r4:'Hindi isinasama ang sagrado o ipinagbabawal na kaalaman. Kapag wala pang pinagkunan, "Malapit na" ang nakasulat.',
+    style_k:'Mockup lamang', style_h:'Gabay sa itsura', st_colors:'Kulay', st_type:'Titik', st_motion:'Galaw',
+    badge:'Mockup · itsura lamang', dio_kicker:'Diorama', dio_drag:'I-drag para paikutin ang diorama', dio_tag:'Patungan ng instrumento · wala pa hangga\'t walang pinagkunan',
+    now:'Binabasa ngayon',
+    tp_identity:'Pagkakakilanlan', tp_myth:'Mito at kuwento', tp_meaning:'Kahulugan', tp_music:'Musika', tp_performance:'Pagtatanghal', tp_significance:'Kahalagahan', tp_sources:'Mga Pinagkunan',
+    tn_identity:'Sino ang pamayanan, sa sarili nilang pangalan, at ang lupang kanilang tinitirhan. May sanggunian.',
+    tn_myth:'Isang mito o tradisyonal na salaysay na may tiyak na pinagkunan.',
+    tn_meaning:'Ang kahulugan ng kuwento. Hiwalay ang salaysay ng pinagkunan sa aming interpretasyon.',
+    tn_music:'Mga awit at instrumentong naitala para sa pamayanang ito. May audio lamang kung pinapayagan.',
+    tn_performance:'Kailan, saan at sino ang nagtatanghal ng musika.',
+    tn_significance:'Paano dinadala ng mga kuwento at musika ang pagkakakilanlan, pagpapahalaga at buhay ng pamayanan.',
+    tn_sources:'Dalawang matibay na pinagkunan, naka-link sa listahan ng sanggunian.',
+    film_note:'Mga silweta ng tanawin lamang. Iguguhit ang mga tauhan ng kuwento kapag may pinagkunan na ang teksto.',
+    fig_note:'Ang 3D na pigura ay isang inistilong modelo, walang mukha, ng kasuotan at palamuti sa isang reperensiyang larawan. Susuriin ito batay sa dokumentadong pinagkunan, at mas mainam kung sa mismong pamayanan, bago ilathala.',
+    play:'I-play', pause:'I-pause', restart:'Ulitin', player:'Wala pang rekording',
+    music_note:'May label ang mga tunog na ginawa sa browser na hindi ito rekording ng pamayanan. Walang kusang tumutugtog.',
+    src_row:'Awtor (Taon) · mula sa talaan ng pinagkunan',
+    cap1:'Eksena 1 · Simula. Manggagaling ang salaysay sa kuwentong may sanggunian.', cap2:'Eksena 2 · Pagbabago. Darating ang salaysay.', cap3:'Eksena 3 · Wakas. Darating ang salaysay.',
+    mode3d:'3D na mapa', modeflat:'Patag na mapa',
+    t_rm:'Patag na mapa ang ipinapakita dahil naka-on ang reduced motion. Lumipat sa 3D sa itaas.', t_gl:'Patag na mapa ang ipinapakita dahil hindi kaya ng device na ito ang 3D.',
+    t_slow:'Lumipat sa patag na mapa dahil mabagal ang 3D.',
+    l_luzon:'Luzon', l_visayas:'Kabisayaan', l_mindanao:'Mindanao', l_davao:'Rehiyon ng Davao', l_phsea:'Dagat ng Pilipinas', l_gulf:'Golpo ng Davao', l_apo:'Bundok Apo · 2,954 m', l_ham:'Bundok Hamiguitan', l_samal:'Pulo ng Samal', l_city:'Lungsod ng Davao'
+  }
+};
+let lang = store.get('emag-lang') === 'fil' ? 'fil' : 'en';
+const t = k => (T[lang][k] != null ? T[lang][k] : (T.en[k] != null ? T.en[k] : k));
+
+/* ======================= noise & terrain helpers ======================= */
+function hash2(x, y){ let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+function vnoise(x, y){
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, y, o = 4){ let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++){ s += a * vnoise(x * f + i * 17.3, y * f - i * 9.1); n += a; a *= 0.5; f *= 2.03; } return s / n; }
+function ridged(x, y, o = 4){ let s = 0, a = 0.5, f = 1, n = 0; for (let i = 0; i < o; i++){ const r = 1 - Math.abs(2 * vnoise(x * f + i * 31.7, y * f + i * 7.7) - 1); s += a * r * r; n += a; a *= 0.5; f *= 2.1; } return s / n; }
+const gauss2 = (x, y, cx, cy, r) => { const dx = (x - cx) / r, dy = (y - cy) / r; return Math.exp(-(dx * dx + dy * dy)); };
+const coneF = (x, y, cx, cy, r, e = 1.6) => { const d = Math.hypot(x - cx, y - cy) / r; return d >= 1 ? 0 : Math.pow(1 - d, e); };
+function segD(x, y, ax, ay, bx, by){ const vx = bx - ax, vy = by - ay; const k = Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy))); return Math.hypot(x - ax - vx * k, y - ay - vy * k); }
+const ridgeF = (x, y, ax, ay, bx, by, w) => { const d = segD(x, y, ax, ay, bx, by) / w; return Math.exp(-d * d); };
+function lineD(x, y, pts){ let m = Infinity; for (let i = 0; i < pts.length - 1; i++) m = Math.min(m, segD(x, y, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1])); return m; }
+const smooth = (a, b, x) => { const k = Math.max(0, Math.min(1, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+const lerp = (a, b, k) => a + (b - a) * k;
+
+/* ======================= geography (schematic outlines) ======================= */
+// Hand-placed outlines in lon/lat; heights come from a terrain function shaped on the
+// landscape notes. The real build swaps both for baked AWS Terrain Tiles + geoBoundaries.
+const S = 10, LON0 = 125.75, LAT0 = 6.9, BASE = 0.45, LT = 0.15;
+const LEVELS = []; for (let m = 100; m <= 2900; m += 200) LEVELS.push(m);
+const levelOf = h => LEVELS.filter(v => v <= h).length;
+const P = ([lon, lat]) => [(lon - LON0) * S, (lat - LAT0) * S];
+
+const PROVS = [
+  { id:'norte', prov:'Davao del Norte', people:'Ata Manobo', col:'leaf',
+    poly:[[125.2,7.55],[125.6,7.35],[125.75,7.35],[125.85,7.7],[125.85,7.98],[125.3,7.92]],
+    extra:[{ c:[125.76,7.08], r:0.75, sx:0.7, sy:1.45 }], pin:[125.62,7.52] },
+  { id:'oro', prov:'Davao de Oro', people:'Mansaka', col:'gold',
+    poly:[[125.75,7.35],[126.05,7.25],[126.25,7.5],[126.45,7.75],[126.2,7.95],[125.85,7.98],[125.85,7.7]], pin:[126.0,7.42] },
+  { id:'oriental', prov:'Davao Oriental', people:'Mandaya', col:'tide',
+    poly:[[126.05,7.25],[125.95,6.95],[126.08,6.55],[126.2,6.3],[126.35,6.5],[126.45,6.9],[126.6,7.3],[126.45,7.75],[126.25,7.5]], pin:[126.08,7.02],
+    tags:[{ key:'l_ham', c:[126.18,6.7] }] },
+  { id:'occidental', prov:'Davao Occidental', people:'Tagakaulo', col:'plum',
+    poly:[[125.45,6.6],[125.25,6.2],[125.38,5.6],[125.62,5.9],[125.66,6.35],[125.55,6.62]], pin:[125.58,6.36] },
+  { id:'sur', prov:'Davao del Sur', people:'Bagobo-Tagabawa', col:'coral',
+    poly:[[124.95,6.75],[125.45,6.6],[125.55,6.62],[125.55,6.9],[125.4,7.05],[125.05,7.1]], pin:[125.48,6.74],
+    tags:[{ key:'l_apo', c:[125.27,6.99] }] }
+];
+const CITY = { id:'city', prov:'Davao City', col:'clay',
+  poly:[[125.05,7.1],[125.4,7.05],[125.55,6.9],[125.65,7.1],[125.6,7.35],[125.2,7.55],[125.0,7.4]] };
+const DAVAO = [...PROVS, CITY];
+
+const COUNTRY = [
+  { fine:true, poly:[[124.95,6.75],[125.05,7.1],[125.0,7.4],[125.2,7.55],[125.3,7.92],[125.85,7.98],[126.2,7.95],[126.45,7.75],[126.55,8.3],[126.35,8.9],[126.15,9.5],[125.85,9.8],[125.5,9.3],[125.2,8.95],[124.8,8.95],[124.3,8.5],[123.9,8.6],[123.6,8.3],[123.3,8.6],[122.9,8.2],[122.2,7.8],[121.95,7.0],[122.5,7.3],[123.0,7.6],[123.5,7.7],[123.7,7.4],[124.0,7.2],[124.2,6.5],[124.6,6.0],[125.1,5.85],[125.25,6.2],[125.45,6.6]] },
+  { poly:[[120.6,18.5],[121.9,18.6],[122.3,17.2],[122.1,16.3],[121.6,15.8],[121.6,14.6],[122.5,14.2],[123.4,13.8],[124.1,13.0],[124.1,12.6],[123.3,13.0],[122.6,13.6],[121.8,13.9],[120.6,13.8],[120.6,14.5],[120.0,14.8],[119.8,16.2],[120.4,16.5],[120.4,17.6]] },
+  { poly:[[120.4,13.5],[121.5,13.3],[121.3,12.2],[120.5,12.5]] },
+  { poly:[[119.3,11.4],[119.8,10.8],[118.9,9.6],[117.2,8.4],[117.4,8.8],[118.6,10.2]] },
+  { poly:[[121.9,11.9],[122.6,11.7],[122.95,10.8],[122.0,10.5]] },
+  { poly:[[122.9,10.95],[123.5,10.85],[123.3,9.4],[122.5,9.9]] },
+  { poly:[[123.95,11.25],[124.1,10.6],[123.4,9.45],[123.7,10.4]] },
+  { poly:[[123.8,10.05],[124.5,10.15],[124.55,9.6],[123.8,9.6]] },
+  { poly:[[124.3,11.6],[125.0,11.3],[125.3,10.2],[124.75,10.0],[124.4,10.8]] },
+  { poly:[[124.3,12.55],[125.3,12.6],[125.8,11.1],[125.1,11.0],[124.6,11.7]] },
+  { poly:[[123.2,12.4],[124.0,12.3],[123.6,11.9]] }
+];
+
+// Davao terrain, shaped on the landscape notes for each province (metres)
+function davaoH(lon, lat){
+  let h = 0;
+  h += 900 * ridgeF(lon, lat, 125.3, 7.07, 125.36, 7.38, 0.06);   // ridge north of Apo (Davao City)
+  h += 800 * ridgeF(lon, lat, 125.02, 6.72, 125.1, 7.08, 0.07);   // western range, Davao del Sur
+  h += 1500 * gauss2(lon, lat, 125.45, 7.86, 0.13);                // Talaingod–Kapalong highlands
+  h += 900 * ridgeF(lon, lat, 125.22, 7.55, 125.32, 7.95, 0.06);  // Davao del Norte west range
+  h += 1000 * ridgeF(lon, lat, 125.84, 7.45, 125.87, 7.95, 0.05); // Davao del Norte east range
+  h += 1400 * ridgeF(lon, lat, 125.95, 7.95, 126.08, 7.45, 0.06); // Davao de Oro ranges
+  h += 1500 * ridgeF(lon, lat, 126.15, 7.95, 126.38, 7.62, 0.06);
+  h += 1100 * ridgeF(lon, lat, 126.0, 7.42, 126.12, 7.28, 0.05);
+  h += 1300 * ridgeF(lon, lat, 126.4, 7.72, 126.32, 6.8, 0.07);   // Pacific Cordillera
+  h += 1400 * ridgeF(lon, lat, 125.4, 6.55, 125.47, 5.72, 0.07);  // Davao Occidental spine
+  h += 700 * ridgeF(lon, lat, 125.3, 6.25, 125.55, 6.4, 0.05);
+  const rug = gauss2(lon, lat, 126.1, 7.65, 0.28) + gauss2(lon, lat, 125.47, 6.12, 0.3) + 0.6 * gauss2(lon, lat, 125.45, 7.85, 0.15);
+  h += 650 * rug * (ridged(lon * 12, lat * 12) - 0.3);
+  h += 220 * (fbm(lon * 16, lat * 16) - 0.35);
+  const plain = Math.min(1, gauss2(lon, lat, 125.66, 7.45, 0.15) + 0.9 * gauss2(lon, lat, 125.47, 6.78, 0.09) + 0.7 * gauss2(lon, lat, 126.05, 7.0, 0.07));
+  h *= 1 - 0.85 * plain;                                           // central lowlands + coastal plains
+  const mv = smooth(0.09, 0.05, Math.hypot(lon - 126.17, lat - 7.55));
+  h = h * (1 - mv) + 650 * mv;                                     // Maragusan-type cold highland valley
+  h += 2954 * coneF(lon, lat, 125.27, 6.99, 0.32, 1.7);            // Mt. Apo
+  h += 1500 * coneF(lon, lat, 126.18, 6.7, 0.14, 1.3);             // Mt. Hamiguitan
+  return Math.max(0, h);
+}
+const CP = [
+  ['c',120.95,16.9,0.5,2900],['r',121.6,17.9,121.75,15.6,0.16,1500],['r',120.15,15.95,120.3,14.95,0.1,1400],['c',123.68,13.25,0.22,2400],
+  ['c',120.95,12.9,0.32,2500],['r',122.1,11.75,122.2,10.75,0.1,1700],['c',123.13,10.41,0.22,2400],['r',123.2,10.3,123.15,9.55,0.08,900],
+  ['r',123.95,11.1,123.5,9.6,0.05,800],['g',124.15,9.85,0.22,600],['r',124.6,11.3,125.05,10.25,0.09,1200],['g',125.1,11.9,0.3,700],
+  ['r',119.35,10.9,117.7,8.75,0.09,1600],['c',124.9,8.1,0.32,2900],['g',124.25,7.9,0.35,800],['c',124.55,7.7,0.15,2400],
+  ['r',122.4,7.55,123.3,8.35,0.12,1200],['r',126.15,9.0,126.3,8.05,0.09,1500],['c',124.95,6.35,0.22,2200],['c',125.27,6.99,0.32,2954]
+];
+function countryH(lon, lat){
+  let h = 60 + 300 * (fbm(lon * 5, lat * 5) - 0.3);
+  CP.forEach(c => {
+    if (c[0] === 'c') h += c[4] * coneF(lon, lat, c[1], c[2], c[3], 1.5);
+    else if (c[0] === 'g') h += c[4] * gauss2(lon, lat, c[1], c[2], c[3]);
+    else h += c[6] * ridgeF(lon, lat, c[1], c[2], c[3], c[4], c[5]) * (0.75 + 0.5 * ridged(lon * 6, lat * 6));
+  });
+  return Math.max(20, h);
+}
+
+function field(x, y, a){ return [a * Math.sin(1.7 * x + 2.3 * y) * Math.cos(0.9 * y + 0.4), a * Math.cos(1.3 * x - 1.9 * y) * Math.sin(1.1 * x + 0.7)]; }
+// subdivide edges and push points through a position-only noise field: shared borders stay identical
+function roughen(poly, amp, step){
+  const out = [];
+  for (let i = 0; i < poly.length; i++){
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    const k = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
+    for (let j = 0; j < k; j++){
+      const q = j / k, x = a[0] + (b[0] - a[0]) * q, y = a[1] + (b[1] - a[1]) * q;
+      const f = j === 0 ? [0, 0] : field(x, y, amp);
+      out.push([x + f[0], y + f[1]]);
+    }
+  }
+  return out;
+}
+function blob(cx, cy, r, seed, sx = 1, sy = 1, n = 44){
+  const pts = [];
+  for (let i = 0; i < n; i++){
+    const a = i / n * TAU, k = 1 + 0.13 * Math.sin(2 * a + seed) + 0.09 * Math.sin(3 * a + seed * 1.9) + 0.05 * Math.sin(5 * a + seed * 2.7);
+    pts.push([cx + Math.cos(a) * r * k * sx, cy + Math.sin(a) * r * k * sy]);
+  }
+  return pts;
+}
+const ringArea = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] + r[i][0]) * (r[j][1] - r[i][1]); return Math.abs(a / 2); };
+
+/* contour sheets: rasterise the outline, sample the terrain, trace levels with d3-contour */
+function rasterMask(w, h, rings, x0, y0, cell){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'); x.fillStyle = '#000'; x.beginPath();
+  rings.forEach(r => { r.forEach(([px, py], i) => { const X = (px - x0) / cell, Y = (py - y0) / cell; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); });
+  x.fill();
+  const d = x.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0;
+  const o = new Uint8Array(w * h);
+  for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++){ const k = j * w + i; o[k] = m[k] && m[k - 1] && m[k + 1] && m[k - w] && m[k + w] ? 1 : 0; }
+  return o;
+}
+// Douglas–Peucker on a closed ring: marching squares gives one vertex per cell, far more than triangulation needs
+function simplifyRing(r, tol){
+  const n = r.length; if (n < 8 || !tol) return r;
+  const keep = new Uint8Array(n); keep[0] = keep[n - 1] = 1;
+  let far = 0, fd = -1; for (let i = 1; i < n; i++){ const d = Math.hypot(r[i][0] - r[0][0], r[i][1] - r[0][1]); if (d > fd){ fd = d; far = i; } }
+  keep[far] = 1;
+  const stack = [[0, far], [far, n - 1]];
+  while (stack.length){
+    const [a, b] = stack.pop(); let mi = -1, md = tol;
+    for (let i = a + 1; i < b; i++){ const d = segD(r[i][0], r[i][1], r[a][0], r[a][1], r[b][0], r[b][1]); if (d > md){ md = d; mi = i; } }
+    if (mi > 0){ keep[mi] = 1; stack.push([a, mi], [mi, b]); }
+  }
+  const out = r.filter((_, i) => keep[i]);
+  return out.length >= 4 ? out : r;
+}
+function traceLevels(vals, w, h, thresholds, toXY, minA, tol = 0){
+  if (!window.d3 || !d3.contours) return [];
+  const cs = d3.contours().size([w, h]).thresholds(thresholds)(vals);
+  const out = [];
+  cs.forEach((c, idx) => {
+    const polys = [];
+    c.coordinates.forEach(poly => {
+      const rings = poly.map(r => simplifyRing(r.slice(0, -1).map(([cx, cy]) => toXY(cx, cy)), tol)).filter(r => r.length >= 3);
+      if (!rings.length || ringArea(rings[0]) < minA) return;
+      polys.push([rings[0], ...rings.slice(1).filter(r => ringArea(r) > minA * 0.5)]);
+    });
+    if (polys.length) out.push({ lvl: idx + 1, polys });
+  });
+  return out;
+}
+function contourLayers(rings, hFn, cell, thresholds){
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  rings.forEach(r => r.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }));
+  const x0 = minX - 2 * cell, y0 = minY - 2 * cell;
+  const w = Math.ceil((maxX - minX) / cell) + 4, h = Math.ceil((maxY - minY) / cell) + 4;
+  const mask = rasterMask(w, h, rings, x0, y0, cell);
+  const vals = new Float64Array(w * h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++){ const k = j * w + i; vals[k] = mask[k] ? hFn(x0 + (i + 0.5) * cell, y0 + (j + 0.5) * cell) : -1; }
+  return traceLevels(vals, w, h, thresholds, (cx, cy) => [x0 + cx * cell, y0 + cy * cell], cell * cell * 4, cell * 0.4);
+}
+const dH = (x, y) => davaoH(x / S + LON0, y / S + LAT0);
+const cH = (x, y) => countryH(x / S + LON0, y / S + LAT0);
+
+const EX_D = 1.6;
+DAVAO.forEach(d => {
+  const outline = roughen(d.poly.map(P), 0.16, 0.45);
+  const rings = [outline];
+  (d.extra || []).forEach((e, k) => { const [x, y] = P(e.c); rings.push(blob(x, y, e.r, 3.1 + k, e.sx, e.sy)); });
+  d.base = rings;
+  d.layers = contourLayers(rings, dH, 0.1, LEVELS);
+  let cx = 0, cy = 0; d.poly.forEach(p => { const q = P(p); cx += q[0]; cy += q[1]; }); cx /= d.poly.length; cy /= d.poly.length;
+  d.cen = [cx, cy]; const len = Math.hypot(cx, cy) || 1; d.dir = [cx / len, cy / len];
+});
+const countryRings = COUNTRY.map(c => c.fine ? roughen(c.poly.map(P), 0.16, 0.45) : roughen(c.poly.map(P), 0.55, 1.1));
+const countryLayers = contourLayers(countryRings, cH, 0.5, LEVELS);
+const surfaceY = h => BASE + levelOf(h) * LT;
+
+/* ======================= worlds ======================= */
+const NP = DAVAO.length;
+function W(o){ return Object.assign({ t:[0,0,0], d:40, el:55, az:0, ex:0, fo:0, cl:0, lc:0, lp:0, pn:0, side:0, lift:new Array(NP).fill(0), dim:new Array(NP).fill(0) }, o); }
+const WORLDS = {
+  cover:        W({ t:[-36,0,-42], d:178, el:64, az:-10 }),
+  intro:        W({ t:[0,0,0], d:70, el:74, az:-4, cl:1, fo:0.55, lc:0.25 }),
+  region:       W({ t:[0,0,0.8], d:40, el:58, az:6, ex:1, fo:1, lp:1, pn:0.55 }),
+  compare:      W({ t:[0,0,0.6], d:46, el:66, az:0, ex:1, fo:1, lp:0.6, pn:1, lift:[.45,.45,.45,.45,.45,0] }),
+  significance: W({ t:[0,0,1], d:28, el:28, az:180, ex:0.55, fo:1, lp:0.5, pn:0.5 }),
+  conclusion:   W({ t:[-36,0,-42], d:182, el:66, az:-10, lc:1 }),
+  references:   W({ t:[-36,0,-42], d:205, el:74, az:-10, lc:0.55 })
+};
+PROVS.forEach((p, i) => {
+  const d = DAVAO[i];
+  const tg = [d.cen[0] + d.dir[0] * EX_D, 1.3, -d.cen[1] - d.dir[1] * EX_D];
+  const az = Math.atan2(-tg[0], -tg[2]) * 180 / Math.PI; // camera over the gulf, looking out at the province
+  const lift = new Array(NP).fill(0); lift[i] = 1;
+  const dim = new Array(NP).fill(0.45); dim[i] = 0;
+  WORLDS[p.id] = W({ t:tg, d:18, el:46, az, ex:1, fo:1, lp:0.55, pn:1, lift, dim });
+});
+const KEYS = ['d','el','az','ex','fo','cl','lc','lp','pn','side'];
+const cloneW = w => ({ ...w, t:[...w.t], lift:[...w.lift], dim:[...w.dim] });
+function blend(a, b, k, out){
+  for (let i = 0; i < 3; i++) out.t[i] = a.t[i] + (b.t[i] - a.t[i]) * k;
+  KEYS.forEach(key => { out[key] = a[key] + (b[key] - a[key]) * k; });
+  for (let i = 0; i < NP; i++){ out.lift[i] = a.lift[i] + (b.lift[i] - a.lift[i]) * k; out.dim[i] = a.dim[i] + (b.dim[i] - a.dim[i]) * k; }
+  return out;
+}
+
+/* ======================= people summary cards ======================= */
+$('#peoples-slot').outerHTML = PROVS.map((p, i) => `
+<section class="sec" id="p-${p.id}" data-world="${p.id}" data-side="${i % 2 ? 'right' : 'left'}" data-ch="peoples">
+  <article class="panel" style="--pc:var(--${p.col})">
+    <p class="eyebrow"><span class="sw"></span><span class="num">${i + 1} / 5</span><span><span data-i18n="province">Province</span> · ${p.prov}</span></p>
+    <h2 class="pname">${p.people}</h2>
+    <div class="sum"><div class="skel" aria-hidden="true"><i></i><i></i><i></i></div><p class="note" data-i18n="sum_note">Summary</p></div>
+    <div class="inside"><p data-i18n="inside">Inside the diorama</p>
+      <ul class="chips">${TOPICS.map(k => `<li data-i18n="tp_${k}"></li>`).join('')}</ul></div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" data-dio="${i}">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+        <span data-i18n="enter_dio">Enter diorama</span></button>
+    </div>
+  </article>
+</section>`).join('');
+
+(function(){
+  const rows = ['row_themes','row_beliefs','row_music','row_context','row_function'];
+  $('#cmp').innerHTML = `<thead><tr><th scope="col"></th>${PROVS.map(p => `<th scope="col" style="--pc:var(--${p.col})"><i></i>${p.people}<span>${p.prov}</span></th>`).join('')}</tr></thead>
+  <tbody>${rows.map(r => `<tr><th scope="row" data-i18n="${r}"></th>${PROVS.map(() => '<td></td>').join('')}</tr>`).join('')}</tbody>`;
+  const sw = [['rest','Land · rest of the map'],['sea','Water'],['paper','Paper · page ground'],['card','Card · panels'],['ink','Ink · text'],['accent','Ink-blue · actions'],
+    ['leaf','Leaf · Davao del Norte'],['gold','Gold · Davao de Oro'],['tide','Tide · Davao Oriental'],['plum','Plum · Davao Occidental'],['coral','Coral · Davao del Sur'],['clay','Clay · Davao City']];
+  $('#swatches').innerHTML = sw.map(([k, n]) => `<div class="swatch" style="--c:var(--${k})"><b></b><span>${n}<br><code data-tok="${k}"></code></span></div>`).join('');
+})();
+function refreshSwatchCodes(){ const cs = getComputedStyle(root); $$('[data-tok]').forEach(el => { el.textContent = cs.getPropertyValue('--' + el.dataset.tok).trim().toUpperCase(); }); }
+
+/* ======================= language ======================= */
+const labelDefs = [];
+function applyLang(){
+  root.lang = lang === 'fil' ? 'fil' : 'en';
+  $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $$('[data-lang-btn]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.langBtn === lang)));
+  labelDefs.forEach(l => { if (l.key) l.el.textContent = t(l.key); });
+  $$('#flat [data-key]').forEach(el => { el.textContent = t(el.dataset.key); });
+  updateTopicUI();
+  updateFilmBtn();
+}
+$$('[data-lang-btn]').forEach(b => b.addEventListener('click', () => {
+  const keep = currentSectionIndex();
+  lang = b.dataset.langBtn; store.set('emag-lang', lang); applyLang();
+  requestAnimationFrame(() => { measure(); if (keep > 0 && sections[keep]) sections[keep].el.scrollIntoView({ block:'center' }); });
+}));
+
+/* ======================= sections & scroll ======================= */
+const sections = $$('main > section').map(el => {
+  const w = cloneW(WORLDS[el.dataset.world]);
+  w.side = el.dataset.side === 'left' ? 1 : el.dataset.side === 'right' ? -1 : 0; // card side → frame the map on the other side
+  return { el, w, ch: el.dataset.ch };
+});
+for (let i = 1; i < sections.length; i++){
+  const prev = sections[i - 1].w.az; let az = sections[i].w.az;
+  while (az - prev > 180) az -= 360; while (az - prev < -180) az += 360;
+  sections[i].w.az = az;
+}
+let anchors = [];
+function measure(){ const vh = innerHeight; anchors = sections.map(s => { const r = s.el.getBoundingClientRect(); return r.top + scrollY + r.height / 2 - vh / 2; }); }
+function currentSectionIndex(){ const y = scrollY; let best = 0, bd = Infinity; anchors.forEach((a, i) => { const d = Math.abs(a - y); if (d < bd){ bd = d; best = i; } }); return best; }
+const goal = cloneW(WORLDS.cover);
+function scrollWorld(){
+  const y = scrollY; let i = 0;
+  while (i < anchors.length - 1 && y >= anchors[i + 1]) i++;
+  if (i >= anchors.length - 1) return blend(sections[i].w, sections[i].w, 0, goal);
+  let k = (y - anchors[i]) / (anchors[i + 1] - anchors[i]);
+  k = Math.min(1, Math.max(0, (k - 0.16) / 0.68)); k = k * k * (3 - 2 * k);
+  return blend(sections[i].w, sections[i + 1].w, k, goal);
+}
+const railLinks = $$('.rail a'); let lastCh = '';
+function updateRail(){ const ch = sections[currentSectionIndex()].ch; if (ch === lastCh) return; lastCh = ch; railLinks.forEach(a => a.setAttribute('aria-current', String(a.dataset.ch === ch))); }
+$('#explore').addEventListener('click', () => $('#intro').scrollIntoView({ behavior: reduceMQ.matches ? 'auto' : 'smooth', block:'center' }));
+
+let toastTimer;
+function toast(key){ const el = $('#toast'); el.textContent = t(key); el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 6500); }
+
+/* ======================= mode ======================= */
+function hasWebGL(){ try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; } }
+const glOK = typeof THREE !== 'undefined' && hasWebGL();
+let mode = 'flat', three = null, flat = null;
+function setMode(m, why){
+  if (m === '3d' && !glOK){ m = 'flat'; why = 't_gl'; }
+  mode = m;
+  $$('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  $('#mode-3d').disabled = !glOK;
+  if (m === '3d'){
+    if (!three) three = build3D();
+    $('#stage').hidden = false; $('#flat').hidden = true; $('#labels').hidden = false; three.start();
+  } else {
+    if (three) three.stop();
+    $('#stage').hidden = true; $('#labels').hidden = true; $('#flat').hidden = false;
+    if (!flat) flat = buildFlat();
+    flat.sync(true);
+  }
+  if (why) toast(why);
+}
+$$('[data-mode]').forEach(b => b.addEventListener('click', () => { store.set('emag-mode', b.dataset.mode); setMode(b.dataset.mode); }));
+
+function tokens(){
+  const cs = getComputedStyle(root), o = {};
+  ['paper','card','edge','ink','ink-2','sea','sea-deep','rest','leaf','gold','tide','coral','plum','clay','accent'].forEach(k => { o[k] = cs.getPropertyValue('--' + k).trim() || '#888888'; });
+  return o;
+}
+const themeListeners = [];
+function onTheme(){ refreshSwatchCodes(); themeListeners.forEach(f => f()); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme);
+new MutationObserver(onTheme).observe(root, { attributes:true, attributeFilter:['data-theme'] });
+
+/* view offset: push the look-at point into the half of the screen the card leaves open */
+function frameOffset(cam, side, wideShift, tallShift){
+  const w = innerWidth, h = innerHeight;
+  if (w > 760 && w >= h * 0.9) cam.setViewOffset(w, h, -side * wideShift * w, 0, w, h);
+  else cam.setViewOffset(w, h, 0, Math.abs(side) * tallShift * h, w, h);
+}
+
+/* ======================= 3D map ======================= */
+const dioCache = {};
+function build3D(){
+  const canvas = $('#stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 700 ? 1.5 : 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xffffff, 100, 400);
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.5, 1200);
+
+  const grain = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+    const id = x.createImageData(256, 256);
+    for (let i = 0; i < id.data.length; i += 4){ const v = 234 + Math.random() * 21 | 0; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+    x.putImageData(id, 0, 0); x.globalAlpha = 0.16; x.strokeStyle = '#b9b0a0';
+    for (let i = 0; i < 260; i++){ const px = Math.random() * 256, py = Math.random() * 256, a = Math.random() * Math.PI; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * 7, py + Math.sin(a) * 7); x.stroke(); }
+    const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(0.3, 0.3); tx.anisotropy = 4; return tx;
+  })();
+
+  // every colour comes from a CSS token, so the scene follows the theme
+  const mats = []; let TK = tokens();
+  const fadeTo = new THREE.Color(), white = new THREE.Color(1, 1, 1);
+  function colorMat(m){ const s = m.userData.spec; m.userData.base.set(TK[s.base]); if (s.mix) m.userData.base.lerp(new THREE.Color(TK[s.mix]), s.amt); m.color.copy(m.userData.base); }
+  function reg(mat, spec){ mat.userData.spec = spec; mat.userData.base = new THREE.Color(); mats.push(mat); colorMat(mat); return mat; }
+  const landCache = {};
+  function landMat(col, lvl){
+    const key = col + ':' + lvl;
+    if (!landCache[key]) landCache[key] = reg(new THREE.MeshStandardMaterial({ roughness:0.96, metalness:0, map:grain }), { base:col, mix:'edge', amt:Math.min(lvl * 0.02, 0.3), fadeKey:col });
+    return landCache[key];
+  }
+  const sideMat = reg(new THREE.MeshStandardMaterial({ roughness:1 }), { base:'edge' });
+  const inkMat = reg(new THREE.MeshStandardMaterial({ roughness:0.8 }), { base:'ink' });
+  const seaMat = reg(new THREE.MeshStandardMaterial({ roughness:1, map:grain }), { base:'sea' });
+  const cloudMat = reg(new THREE.MeshStandardMaterial({ roughness:1, transparent:true }), { base:'edge' });
+  const flagMats = PROVS.map(p => reg(new THREE.MeshStandardMaterial({ roughness:0.9, side:THREE.DoubleSide }), { base:p.col, mix:'ink', amt:0.15 }));
+  function applyTheme(){
+    TK = tokens(); mats.forEach(colorMat);
+    fadeTo.set(TK.rest).lerp(white, 0.5);
+    const sea = new THREE.Color(TK.sea); scene.fog.color.copy(sea); renderer.setClearColor(sea, 1);
+    Object.values(dioCache).forEach(d => d.theme());
+  }
+  themeListeners.push(applyTheme);
+
+  const V2 = ([x, y]) => new THREE.Vector2(x, y);
+  function shapesFrom(polys){
+    return polys.map(poly => { const s = new THREE.Shape(poly[0].map(V2)); for (let k = 1; k < poly.length; k++) s.holes.push(new THREE.Path(poly[k].map(V2))); return s; });
+  }
+  function slabPolys(polys, depth, mat, y){
+    const g = new THREE.ExtrudeGeometry(shapesFrom(polys), { depth, bevelEnabled:false, curveSegments:1 });
+    const m = new THREE.Mesh(g, [mat, sideMat]);
+    m.rotation.x = -Math.PI / 2; m.position.y = y; m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), seaMat);
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -0.02; sea.receiveShadow = true; scene.add(sea);
+
+  const countryGroup = new THREE.Group(); scene.add(countryGroup);
+  countryGroup.add(slabPolys(countryRings.map(r => [r]), BASE, landMat('rest', 0), 0));
+  countryLayers.forEach(L => countryGroup.add(slabPolys(L.polys, LT, landMat('rest', L.lvl), BASE + (L.lvl - 1) * LT)));
+
+  const pieces = DAVAO.map(d => {
+    const g = new THREE.Group();
+    g.add(slabPolys(d.base.map(r => [r]), BASE, landMat(d.col, 0), 0));
+    d.layers.forEach(L => g.add(slabPolys(L.polys, LT, landMat(d.col, L.lvl), BASE + (L.lvl - 1) * LT)));
+    scene.add(g); return g;
+  });
+
+  const pins = PROVS.map((p, i) => {
+    const g = new THREE.Group(); g.userData.isPin = true;
+    const [x, y] = P(p.pin);
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.6, 6), inkMat); stick.position.y = 1.3; stick.castShadow = true;
+    const fs = new THREE.Shape(); fs.moveTo(0, 0); fs.lineTo(1.0, -0.28); fs.lineTo(0, -0.56); fs.closePath();
+    const flag = new THREE.Mesh(new THREE.ShapeGeometry(fs), flagMats[i]); flag.position.set(0.03, 2.6, 0); flag.castShadow = true;
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 20), inkMat); foot.position.y = 0.02;
+    g.add(stick, flag, foot); g.position.set(x, surfaceY(dH(x, y)), -y);
+    pieces[i].add(g); return g;
+  });
+
+  const clouds = new THREE.Group(); scene.add(clouds);
+  (function(){
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 16; i++){
+      const c = new THREE.Group(), parts = 3 + (rnd() * 3 | 0);
+      for (let j = 0; j < parts; j++){
+        const r = 1.6 + rnd() * 2.2, disc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.18, 28), cloudMat);
+        disc.position.set((j - parts / 2) * 2.1 + rnd(), rnd() * 0.25, (rnd() - 0.5) * 1.8); disc.castShadow = true; c.add(disc);
+      }
+      const ang = rnd() * TAU, rad = 4 + rnd() * 26;
+      c.position.set(Math.cos(ang) * rad, 18 + rnd() * 26, Math.sin(ang) * rad); c.userData.drift = 0.2 + rnd() * 0.4;
+      clouds.add(c);
+    }
+  })();
+
+  scene.add(new THREE.HemisphereLight(0xfffaf0, 0xb8b0a0, 0.62));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
+  scene.add(sun, sun.target);
+
+  // labels
+  const labelsEl = $('#labels'), labels = [];
+  function addLabel(key, cls, layer, getPos, extra){
+    const el = document.createElement('div'); el.className = 'lbl ' + cls; el.textContent = key ? t(key) : extra.text;
+    labelsEl.appendChild(el); const l = { el, key, layer, getPos, i: extra && extra.i }; labels.push(l); labelDefs.push(l); return l;
+  }
+  const atLL = (ll, h) => { const [x, y] = P(ll); return new THREE.Vector3(x, h, -y); };
+  const tmp = new THREE.Vector3();
+  addLabel('l_luzon', 'country', 'lc', () => atLL([121.2, 15.4], 3));
+  addLabel('l_visayas', 'country', 'lc', () => atLL([123.4, 11.4], 3));
+  addLabel('l_mindanao', 'country', 'lc', () => atLL([124.0, 8.3], 3));
+  addLabel('l_phsea', 'land', 'lc', () => atLL([127.6, 13.0], 0.5));
+  addLabel('l_gulf', 'land', 'lp', () => tmp.set(0, 0.4, 0).clone());
+  DAVAO.forEach((d, i) => {
+    const [cx, cy] = d.cen;
+    addLabel(i < PROVS.length ? null : 'l_city', '', 'lp', () => pieces[i].localToWorld(tmp.set(cx, BASE + 0.25, -cy)).clone(), { text: d.prov });
+    (d.tags || []).forEach(tg => { const [x, y] = P(tg.c); addLabel(tg.key, 'land', 'lp', () => pieces[i].localToWorld(tmp.set(x, surfaceY(dH(x, y)) + 0.25, -y)).clone()); });
+  });
+  { const [x, y] = P(PROVS[0].extra[0].c); addLabel('l_samal', 'land', 'lp', () => pieces[0].localToWorld(tmp.set(x, BASE + 0.15, -y)).clone()); }
+  PROVS.forEach((p, i) => addLabel(null, 'people', 'pn', () => pins[i].localToWorld(tmp.set(0.5, 2.95, 0)).clone(), { text: p.people, i }));
+
+  const cur = cloneW(WORLDS.cover);
+  cur.d *= 1.55; cur.az -= 38; cur.el = 80; // opening flight settles onto the cover
+  let dive = 0, diveGoal = 0, diveTarget = null, running = false, raf = 0, last = performance.now();
+  const perf = { n:0, sum:0, done:false };
+  const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(), proj = new THREE.Vector3();
+
+  function resize(){
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 50 : 34; camera.updateProjectionMatrix();
+    Object.values(dioCache).forEach(d => { d.cam.aspect = w / h; d.cam.fov = w < h ? 50 : 36; d.cam.updateProjectionMatrix(); });
+  }
+  addEventListener('resize', resize);
+  const damp = (a, b, l, dt) => a + (b - a) * (1 - Math.exp(-l * dt));
+
+  function frame(now){
+    if (!running) return;
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!perf.done && now > 1500){ perf.n++; perf.sum += dt; if (perf.n > 90){ perf.done = true; if (perf.sum / perf.n > 0.055){ store.set('emag-mode', 'flat'); setMode('flat', 't_slow'); return; } } }
+    if (dio && dio.active){ dio.tick(dt, now / 1000); renderer.render(dio.scene, dio.cam); return; }
+
+    const g = scrollWorld();
+    for (let i = 0; i < 3; i++) cur.t[i] = damp(cur.t[i], g.t[i], 3, dt);
+    KEYS.forEach(k => { cur[k] = damp(cur[k], g[k], 3, dt); });
+    for (let i = 0; i < NP; i++){ cur.lift[i] = damp(cur.lift[i], g.lift[i], 3, dt); cur.dim[i] = damp(cur.dim[i], g.dim[i], 3, dt); }
+    dive = damp(dive, diveGoal, 5.5, dt);
+
+    pieces.forEach((pc, i) => { const d = DAVAO[i]; pc.position.set(d.dir[0] * EX_D * cur.ex, cur.ex * 0.35 + cur.lift[i] * 0.9, -d.dir[1] * EX_D * cur.ex); });
+    const fadeAmt = { rest: cur.fo * 0.6 };
+    DAVAO.forEach((d, i) => { fadeAmt[d.col] = cur.dim[i] * 0.5; });
+    mats.forEach(m => { const fk = m.userData.spec.fadeKey; if (fk) m.color.copy(m.userData.base).lerp(fadeTo, fadeAmt[fk] || 0); });
+
+    camTgt.set(cur.t[0], cur.t[1], cur.t[2]);
+    let dist = cur.d;
+    if (diveTarget){ camTgt.lerp(diveTarget, dive); dist = cur.d * (1 - 0.82 * dive); }
+    const el = cur.el * Math.PI / 180, az = cur.az * Math.PI / 180;
+    camPos.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(dist).add(camTgt);
+    camera.position.copy(camPos); camera.lookAt(camTgt);
+    frameOffset(camera, cur.side * (1 - dive), 0.2, 0.2);
+    scene.fog.near = dist * 0.9; scene.fog.far = dist * 3.2;
+
+    const D = Math.max(18, dist);
+    sun.position.set(camTgt.x - D * 0.55, D * 1.25, camTgt.z - D * 0.35); sun.target.position.copy(camTgt);
+    const sc = sun.shadow.camera; sc.left = -D; sc.right = D; sc.top = D; sc.bottom = -D; sc.near = 0.5; sc.far = D * 4; sc.updateProjectionMatrix();
+
+    clouds.visible = cur.cl > 0.01; cloudMat.opacity = Math.min(1, cur.cl * 1.1);
+    clouds.children.forEach(c => { c.position.x += c.userData.drift * dt; if (c.position.x > 34) c.position.x = -34; });
+
+    pins.forEach((p, i) => {
+      p.visible = cur.pn > 0.02;
+      p.scale.setScalar(Math.max(0.001, cur.pn) * (0.85 + 0.35 * cur.lift[i]) * Math.min(1, 0.55 + cur.d / 60));
+      const wp = p.getWorldPosition(proj);
+      p.rotation.y = Math.atan2(camPos.x - wp.x, camPos.z - wp.z) - Math.PI / 2 + 0.6;
+      p.children[1].position.y = 2.6 + Math.sin(now / 600 + i) * 0.06;
+    });
+
+    scene.updateMatrixWorld();
+    renderer.render(scene, camera);
+
+    const w = innerWidth, h = innerHeight;
+    labels.forEach(l => {
+      let op = cur[l.layer] || 0;
+      if (l.layer === 'pn') op = cur.pn * (0.5 + 0.5 * cur.lift[l.i]) * (cur.ex > 0.5 ? 1 : 0);
+      if (l.layer === 'lp') op *= cur.ex > 0.3 ? 1 : 0;
+      if (dive > 0.05) op *= 1 - dive;
+      if (op < 0.03){ if (l.el.style.opacity !== '0') l.el.style.opacity = '0'; return; }
+      proj.copy(l.getPos()).project(camera);
+      if (proj.z > 1 || proj.z < -1){ l.el.style.opacity = '0'; return; }
+      l.el.style.transform = `translate(${((proj.x + 1) / 2 * w).toFixed(1)}px,${((1 - proj.y) / 2 * h).toFixed(1)}px) translate(-50%,-100%)`;
+      l.el.style.opacity = Math.min(1, op).toFixed(2);
+    });
+    updateRail();
+  }
+  function pinScreen(i){
+    const p = pins[i].localToWorld(new THREE.Vector3(0.4, 2.3, 0)).project(camera);
+    return [(p.x + 1) / 2 * innerWidth, (1 - p.y) / 2 * innerHeight, pins[i].localToWorld(new THREE.Vector3(0, 1.0, 0))];
+  }
+  applyTheme(); resize(); measure();
+  return {
+    renderer, scene, camera, sideMat, landMat, reg, slabPolys, pieces, pinScreen,
+    start(){ if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); },
+    stop(){ running = false; cancelAnimationFrame(raf); },
+    dive(target){ diveTarget = target; diveGoal = 1; },
+    undive(){ diveGoal = 0; dive = 0; diveTarget = null; },
+    get tokens(){ return TK; }
+  };
+}
+
+/* ======================= identity figures ======================= */
+// Stylised, faceless figures. Attire, ornaments and colour patterns follow the reference photos in
+// /model_reference, softened slightly toward the pastel palette. To be checked against documented sources.
+function softHex(hex, k = 0.28){
+  const a = parseInt(hex.slice(1), 16), ch = s => Math.round(((a >> s) & 255) * (1 - k) + [255, 246, 236][2 - s / 8] * k);
+  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+function canvasTex(w, h, draw, opt = {}){
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  if (opt.rep) t.repeat.set(opt.rep[0], opt.rep[1]);
+  if (opt.front !== false) t.offset.x = 0.5; // canvas centre lands on the figure's front
+  return t;
+}
+const cDot = (x, cx, cy, r, col) => { x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill(); };
+const cDiamond = (x, cx, cy, rw, rh, col, lw) => { x.beginPath(); x.moveTo(cx, cy - rh); x.lineTo(cx + rw, cy); x.lineTo(cx, cy + rh); x.lineTo(cx - rw, cy); x.closePath(); if (lw){ x.strokeStyle = col; x.lineWidth = lw; x.stroke(); } else { x.fillStyle = col; x.fill(); } };
+function cZig(x, x0, x1, y, amp, step, col, lw){ x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); let k = 0; for (let px = x0; px <= x1 + 0.1; px += step, k++){ const py = y + (k % 2 ? amp : -amp); k ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke(); }
+function cBeads(x, w, h, cols, s, bg){ // bead rows with a repeating diamond motif
+  x.fillStyle = softHex(bg); x.fillRect(0, 0, w, h);
+  for (let j = 0; j * s < h; j++) for (let i = 0; i * s < w; i++){ const m = Math.abs((i % 8) - 4) + Math.abs((j % 8) - 4); cDot(x, i * s + s / 2, j * s + s / 2, s * 0.44, softHex(cols[m % cols.length])); }
+}
+function cStar(x, cx, cy, r, col, core){ for (let k = 0; k < 8; k++){ x.save(); x.translate(cx, cy); x.rotate(k / 8 * TAU); cDiamond(x, 0, -r * 0.55, r * 0.2, r * 0.45, col); x.restore(); } if (core) cDot(x, cx, cy, r * 0.22, core); }
+function cFringe(x, w, h, cols){ // hanging bead strands, scalloped lower edge, transparent between beads
+  const s = 8; for (let i = 0; i * s < w; i++){ const len = h * (0.72 + 0.28 * Math.abs(Math.sin(i * 0.55))); for (let j = 0; j * s < len; j++) cDot(x, i * s + s / 2, j * s + s / 2, s * 0.46, softHex(cols[(i + j) % cols.length])); }
+}
+
+function buildFigure(id){
+  const fig = new THREE.Group();
+  const std = o => new THREE.MeshStandardMaterial(Object.assign({ roughness:0.82 }, o));
+  const col = (h, k) => std({ color: new THREE.Color(softHex(h, k)) });
+  const texM = (t, o) => std(Object.assign({ map:t }, o || {}));
+  const fringeM = t => std({ map:t, transparent:true, alphaTest:0.35, side:THREE.DoubleSide });
+  const add = (geo, m, x = 0, y = 0, z = 0, parent = fig) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; parent.add(o); return o; };
+  const lathe = (pts, seg = 32, p0 = 0, pl = TAU) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg, p0, pl);
+  const TP = [[0.40,1.32],[0.39,1.6],[0.41,1.9],[0.43,2.2],[0.46,2.5],[0.42,2.7],[0.26,2.84],[0.11,2.9]]; // torso profile [radius, y]
+  const torsoR = y => { for (let i = 0; i < TP.length - 1; i++){ const [r0, y0] = TP[i], [r1, y1] = TP[i + 1]; if (y <= y1) return r0 + (r1 - r0) * Math.max(0, (y - y0) / (y1 - y0)); } return 0.11; };
+  const shell = (y0, y1, off = 0.025, p0 = 0, pl = TAU, n = 7) => lathe(Array.from({ length:n }, (_, k) => { const y = y0 + (y1 - y0) * k / (n - 1); return [torsoR(y) + off, y]; }), 32, p0, pl);
+  const frontZ = (x, y, off = 0.03) => Math.sqrt(Math.max(0, (torsoR(y) + off) ** 2 - x * x));
+  const skin = col('#A8724E', 0.1), hairM = col('#1C181A', 0.05), shoe = col('#2A2420', 0.05);
+  function beads(list, r){
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(r, 8, 6), std({ roughness:0.5 }), list.length), m = new THREE.Matrix4(), c = new THREE.Color();
+    list.forEach(([x, y, z, h], i) => { m.makeTranslation(x, y, z); im.setMatrixAt(i, m); im.setColorAt(i, c.set(softHex(h))); });
+    im.castShadow = true; fig.add(im); return im;
+  }
+  const strand = (x0, y0, z0, n, gap, cols) => Array.from({ length:n }, (_, k) => [x0, y0 - k * gap, z0, cols[k % cols.length]]);
+  add(new THREE.CylinderGeometry(0.85, 0.92, 0.14, 40), col('#F3EBDD', 0), 0, -0.07, 0); // plinth
+  const feet = () => [-1, 1].forEach(s => add(new THREE.BoxGeometry(0.2, 0.1, 0.34), shoe, s * 0.16, 0.05, 0.06));
+  const legs = m => { [-1, 1].forEach(s => add(new THREE.CylinderGeometry(0.15, 0.125, 1.42, 14), m, s * 0.17, 0.8, 0)); feet(); };
+  const torso = m => add(lathe(TP), m);
+  function arms(o){
+    return [-1, 1].map(s => {
+      const g = new THREE.Group(); g.position.set(s * 0.5, 2.6, 0); g.rotation.set(o.rx || 0, 0, s * (o.rz == null ? 0.16 : o.rz)); fig.add(g);
+      const L = 1.2, sl = o.len == null ? L : o.len;
+      add(new THREE.SphereGeometry(0.14, 14, 10), o.m, 0, 0, 0, g);
+      add(new THREE.CylinderGeometry(0.135, 0.115, sl, 16), o.m, 0, -sl / 2, 0, g);
+      if (sl < L) add(new THREE.CylinderGeometry(0.095, 0.085, L - sl + 0.04, 12), skin, 0, -sl - (L - sl) / 2 + 0.02, 0, g);
+      add(new THREE.SphereGeometry(0.1, 12, 10), skin, 0, -L - 0.05, 0, g);
+      return g;
+    });
+  }
+  const wristBand = (g, m, r = 0.105, tube = 0.03) => { add(new THREE.TorusGeometry(r, tube, 8, 20), m, 0, -1.06, 0, g).rotation.x = Math.PI / 2; };
+  function head(style){
+    add(new THREE.CylinderGeometry(0.1, 0.11, 0.22, 12), skin, 0, 2.96, 0);
+    add(new THREE.SphereGeometry(0.27, 24, 18), skin, 0, 3.27, 0).scale.set(0.94, 1.06, 1);
+    add(new THREE.SphereGeometry(0.283, 24, 10, 0, TAU, 0, Math.PI * 0.3), hairM, 0, 3.28, -0.005);
+    add(new THREE.SphereGeometry(0.284, 24, 14, Math.PI, Math.PI, 0, Math.PI * (style === 'bob' ? 0.7 : 0.6)), hairM, 0, 3.28, 0);
+    if (style === 'long') add(new THREE.BoxGeometry(0.5, 0.62, 0.1), hairM, 0, 3.02, -0.3).rotation.x = 0.3;
+    if (style === 'bob') add(new THREE.BoxGeometry(0.5, 0.34, 0.1), hairM, 0, 3.12, -0.26).rotation.x = 0.2;
+  }
+  const WH = softHex('#F6EEE2', 0);
+
+  if (id === 'norte'){
+    // Ata Manobo: red shirt and trousers with white geometric motifs, beaded headdress, red bead necklaces, woven bag
+    const RED = softHex('#B8323A');
+    const motif = (bands, rows, rep) => canvasTex(256, 256, (x, w, h) => {
+      x.fillStyle = RED; x.fillRect(0, 0, w, h);
+      bands.forEach(b => { const y = b * h; x.fillStyle = WH; x.fillRect(0, y - 7, w, 3); x.fillRect(0, y + 4, w, 3); for (let px = 7; px < w; px += 14) cDiamond(x, px, y, 4, 3, WH); });
+      rows.forEach(cy => { for (let i = 0; i < 4; i++){
+        const cx = 32 + i * 64; cDiamond(x, cx, cy, 15, 15, WH, 3); x.fillStyle = WH; x.fillRect(cx - 2, cy - 9, 4, 18); x.fillRect(cx - 9, cy - 2, 18, 4);
+        [[-21, 0], [21, 0], [0, -21], [0, 21]].forEach(([dx, dy]) => cDot(x, cx + dx, cy + dy, 2.6, WH));
+      } });
+    }, { rep });
+    legs(texM(motif([0.08], [90, 190], [1, 1])));
+    torso(texM(motif([0.06, 0.5, 0.94], [70, 190], [2, 1])));
+    const ar = arms({ m: texM(motif([0.12, 0.88], [128], [1, 1])) });
+    head('short');
+    add(new THREE.CylinderGeometry(0.3, 0.29, 0.17, 28, 1, true), texM(canvasTex(256, 64, (x, w, h) => cBeads(x, w, h, ['#D9B04A', '#4A3426', '#B8323A', '#4A3426'], 8, '#3B2A20')), { side:THREE.DoubleSide }), 0, 3.42, 0);
+    for (let k = 0; k < 10; k++){ const a = k / 10 * TAU; add(new THREE.ConeGeometry(0.055, 0.24, 6), col('#3B2A20'), Math.sin(a) * 0.25, 3.6, Math.cos(a) * 0.25).rotation.set(Math.cos(a) * 0.4, 0, -Math.sin(a) * 0.4); }
+    const fr = []; for (let k = -3; k <= 3; k++){ const a = k * 0.17; fr.push(...strand(Math.sin(a) * 0.3, 3.31, Math.cos(a) * 0.3 + 0.01, 3, 0.045, ['#D9B04A', '#B8323A'])); } beads(fr, 0.022);
+    add(shell(2.6, 2.84, 0.03), texM(canvasTex(128, 64, (x, w, h) => cBeads(x, w, h, ['#C0303A', '#8E1F28', '#E4C25A'], 8, '#7A1A22'), { rep:[3, 1.5] })));
+    const st = []; for (let k = 0; k < 12; k++){ const y = 2.62 - k * 0.04, xx = -0.12 + k * 0.01; st.push([xx, y, frontZ(xx, y, 0.05), k % 3 ? '#C0303A' : '#E4C25A']); } beads(st, 0.026);
+    add(new THREE.BoxGeometry(0.36, 0.42, 0.1), texM(canvasTex(64, 64, (x, w, h) => { x.fillStyle = softHex('#3B2A20'); x.fillRect(0, 0, w, h); for (let j = 0; j < 4; j++){ x.fillStyle = softHex(j % 2 ? '#B8323A' : '#F0E6D2'); x.fillRect(0, 8 + j * 14, w, 5); } cDiamond(x, 32, 34, 9, 12, softHex('#D9B04A')); }, { front:false })), 0.56, 1.5, 0.18);
+    ar.forEach(g => wristBand(g, col('#C9A85A'), 0.11, 0.025));
+  } else if (id === 'oro'){
+    // Mansaka (Ayala Museum illustration): black jacket with panahiyan shoulder designs (lines, diamonds, squares, circles),
+    // glass trade-bead ornaments on the chest, bright pink trousers, red waist sash, long hair
+    const BK = softHex('#1E1C22', 0.05), RD = softHex('#D8344A'), PK = softHex('#F07C8A'), YL = softHex('#F2C84B'), BU = softHex('#3FA0C8'), GN = softHex('#4FB06A');
+    const pana = (x, w, y0, y1) => {
+      const m = (y0 + y1) / 2, hh = y1 - y0;
+      x.fillStyle = RD; x.fillRect(0, y0, w, 4); x.fillRect(0, y1 - 4, w, 4);
+      x.fillStyle = BU; x.fillRect(0, y0 + 7, w, 2); x.fillRect(0, y1 - 9, w, 2);
+      for (let px = 10; px < w; px += 24){ cDiamond(x, px, m, 7, hh * 0.26, PK); x.fillStyle = YL; x.fillRect(px + 9, m - 3, 6, 6); cDot(x, px + 12, m - hh * 0.28, 2, GN); cDot(x, px + 12, m + hh * 0.28, 2, GN); }
+    };
+    const jacket = canvasTex(256, 256, (x, w, h) => {
+      x.fillStyle = BK; x.fillRect(0, 0, w, h);
+      pana(x, w, h * 0.03, h * 0.22);
+      x.fillStyle = RD; x.beginPath(); x.moveTo(w / 2 - 26, 0); x.lineTo(w / 2 + 26, 0); x.lineTo(w / 2 + 8, h); x.lineTo(w / 2 - 8, h); x.closePath(); x.fill();
+      [-1, 1].forEach(s => {
+        x.strokeStyle = PK; x.lineWidth = 4; x.beginPath(); x.moveTo(w / 2 + s * 30, 0); x.lineTo(w / 2 + s * 12, h); x.stroke();
+        [RD, PK, YL, BU, GN].forEach((c, k) => cZig(x, w / 2 + s * 52 - 16, w / 2 + s * 52 + 16, h * 0.34 + k * 11, 4, 6, c, 2.5));
+      });
+      x.fillStyle = RD; x.fillRect(0, h * 0.92, w, 5); x.fillStyle = PK; x.fillRect(0, h * 0.95, w, 2);
+    });
+    const sleeve = canvasTex(128, 256, (x, w, h) => { x.fillStyle = BK; x.fillRect(0, 0, w, h); pana(x, w, h * 0.02, h * 0.2); x.fillStyle = RD; x.fillRect(0, h * 0.86, w, 6); x.fillStyle = PK; x.fillRect(0, h * 0.9, w, 3); });
+    legs(col('#F07C8A'));
+    torso(texM(jacket));
+    arms({ m: texM(sleeve) });
+    head('long');
+    add(new THREE.CylinderGeometry(0.135, 0.15, 0.1, 20, 1, true), texM(canvasTex(64, 16, (x, w, h) => { x.fillStyle = BK; x.fillRect(0, 0, w, h); x.fillStyle = RD; x.fillRect(0, 0, w, 3); }), { side:THREE.DoubleSide }), 0, 2.88, 0);
+    const beadCols = ['#3FA0C8', '#4FB06A', '#F2C84B', '#D8344A', '#F6EEE2'], bd = [];
+    [-1, 1].forEach(s => { for (let r = 0; r < 3; r++) for (let k = 0; k < 11; k++){ const xx = s * (0.13 + r * 0.035), yy = 2.66 - k * 0.04; bd.push([xx, yy, frontZ(xx, yy, 0.045), beadCols[(k + r) % beadCols.length]]); } });
+    beads(bd, 0.02);
+    add(shell(1.52, 1.66, 0.03), col('#D8344A'));
+    add(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 6), col('#D8344A'), 0.08, 1.38, frontZ(0.08, 1.55, 0.05));
+    beads([[0.08, 1.16, frontZ(0.08, 1.55, 0.05), '#F2C84B']], 0.03);
+  } else if (id === 'oriental'){
+    // Mandaya: red blouse with an embroidered chest panel, a large disc pendant with red tassels, coin rows, beaded band
+    // and bead fringe at the hem, dark sleeves with cross-stitch panels and red fringe, striped skirt, flower in the hair
+    const RD = softHex('#C8282E'), NV = softHex('#25284A', 0.1), OR = softHex('#E8742E'), CR = softHex('#F3E7CF', 0), BK = softHex('#1E1C22', 0.05);
+    const chestPanel = canvasTex(128, 128, (x, w, h) => {
+      x.fillStyle = OR; x.fillRect(0, 0, w, h);
+      for (let y = 8; y < h; y += 20){ cZig(x, 0, w, y, 6, 12, BK, 5); cZig(x, 0, w, y + 7, 6, 12, CR, 2.5); }
+      for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) cDiamond(x, 16 + i * 32, 18 + j * 30, 6, 6, RD);
+      x.strokeStyle = BK; x.lineWidth = 6; x.strokeRect(0, 0, w, h);
+    }, { front:false });
+    const sleeve = canvasTex(128, 256, (x, w, h) => {
+      x.fillStyle = NV; x.fillRect(0, 0, w, h);
+      x.fillStyle = softHex('#9A3A2A'); x.fillRect(0, h * 0.08, w, h * 0.34);
+      for (let j = 0; j < 6; j++) for (let i = 0; i < 8; i++){ const cx = 8 + i * 16, cy = h * 0.1 + 8 + j * 13; x.strokeStyle = (i + j) % 2 ? CR : OR; x.lineWidth = 2; x.beginPath(); x.moveTo(cx - 4, cy - 4); x.lineTo(cx + 4, cy + 4); x.moveTo(cx + 4, cy - 4); x.lineTo(cx - 4, cy + 4); x.stroke(); }
+      x.fillStyle = RD; x.fillRect(0, h * 0.84, w, 6); x.fillStyle = CR; x.fillRect(0, h * 0.88, w, 3);
+    });
+    const band = canvasTex(256, 32, (x, w, h) => { x.fillStyle = BK; x.fillRect(0, 0, w, h); for (let px = 8; px < w; px += 16){ cDiamond(x, px, h / 2, 6, 10, OR); x.strokeStyle = CR; x.lineWidth = 2; x.beginPath(); x.moveTo(px + 4, 4); x.lineTo(px + 12, h - 4); x.moveTo(px + 12, 4); x.lineTo(px + 4, h - 4); x.stroke(); } x.fillStyle = softHex('#F2C84B'); x.fillRect(0, 0, w, 3); }, { rep:[2, 1] });
+    const tassel = canvasTex(256, 32, (x, w, h) => { for (let i = 0; i < w; i += 4){ x.fillStyle = softHex(i % 8 ? '#D8342E' : '#F07A3A'); x.fillRect(i, 0, 3, h * (0.7 + 0.3 * Math.abs(Math.sin(i * 0.7)))); } });
+    const skirt = canvasTex(128, 256, (x, w, h) => {
+      x.fillStyle = softHex('#8A2A2E'); x.fillRect(0, 0, w, h);
+      for (let y = 4; y < h; y += 26){ x.fillStyle = softHex('#2A1C22'); x.fillRect(0, y, w, 4); x.fillStyle = softHex('#D8B88A'); x.fillRect(0, y + 7, w, 2); x.fillStyle = softHex('#2A1C22'); x.fillRect(0, y + 12, w, 2); }
+      for (let k = 0; k < 2; k++){ const y = h * (0.25 + k * 0.4); x.fillStyle = softHex('#3A3236'); x.fillRect(0, y, w, 20); for (let px = 0; px < w; px += 6){ x.fillStyle = softHex(px % 12 ? '#6A5A5E' : '#2A2226'); x.fillRect(px, y + 3, 3, 14); } }
+    }, { rep:[3, 1] });
+    feet();
+    add(lathe([[0.37, 0.08], [0.41, 0.5], [0.42, 1.0], [0.40, 1.42]]), texM(skirt, { side:THREE.DoubleSide }));
+    torso(col('#C8282E'));
+    add(shell(2.12, 2.6, 0.02, -0.6, 1.2), texM(chestPanel));
+    const ar = arms({ m: texM(sleeve), rz: 0.22 });
+    ar.forEach(g => [-0.55, -0.98].forEach(y => add(new THREE.CylinderGeometry(0.15, 0.16, 0.12, 20, 1, true), fringeM(tassel), 0, y, 0, g)));
+    head('short');
+    add(new THREE.SphereGeometry(0.11, 12, 10), hairM, 0, 3.28, -0.3);
+    add(new THREE.SphereGeometry(0.065, 10, 8), col('#D8342E'), 0.05, 3.56, -0.08);
+    const dz = frontZ(0, 2.36, 0.06);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.025, 32), [col('#A8B4A0'), texM(canvasTex(64, 64, (x) => { [[31, '#9AA894'], [26, '#C8D0BC'], [18, '#A8B4A0'], [8, '#D8DECC']].forEach(([r, c]) => cDot(x, 32, 32, r, softHex(c, 0.1))); }, { front:false }), { metalness:0.4, roughness:0.45 }), col('#A8B4A0')]);
+    disc.rotation.x = Math.PI / 2; disc.position.set(0, 2.36, dz); disc.castShadow = true; fig.add(disc);
+    [-0.13, -0.05, 0.05, 0.13].forEach(px => { add(new THREE.ConeGeometry(0.03, 0.12, 6), col('#D8342E'), px, 2.2, dz + 0.01).rotation.x = Math.PI; });
+    const nk = []; for (let i = 0, n = 16; i <= n; i++){ const tt = i / n * 2 - 1, xx = tt * 0.17, yy = 2.82 - 0.3 * (1 - tt * tt); nk.push([xx, yy, frontZ(xx, yy, 0.05), ['#F2C84B', '#D8342E', '#1E1C22', '#F3E7CF'][i % 4]]); }
+    beads(nk, 0.02);
+    const coins = []; for (let k = -6; k <= 6; k++){ const xx = k * 0.045; coins.push([xx, 2.08, frontZ(xx, 2.08, 0.035), '#C9C2A8']); } beads(coins, 0.024);
+    add(shell(1.6, 1.82, 0.03), texM(band));
+    const coins2 = []; for (let k = 0; k < 30; k++){ const a = k / 30 * TAU; coins2.push([Math.sin(a) * 0.45, 1.64, Math.cos(a) * 0.45, '#C9C2A8']); } beads(coins2, 0.022);
+    add(shell(1.4, 1.6, 0.05), fringeM(canvasTex(256, 64, (x, w, h) => cFringe(x, w, h, ['#F3E7CF', '#F2C84B', '#D8342E', '#3953B0']), { rep:[2, 1] })));
+    [-1, 1].forEach(s => beads(strand(s * 0.26, 3.12, 0.04, 9, 0.035, ['#F2C84B', '#D8342E', '#1E1C22']), 0.016));
+  } else if (id === 'occidental'){
+    // Tagakaulo: woven shawl (coral field, eight-point star motifs, green bands) over a black top with white beadwork,
+    // layered bead necklaces with tassels, pale fibre headpiece, beaded and metal bracelets
+    const OR = softHex('#E8653E'), GR = softHex('#3E8C5A'), YL = softHex('#F2C84B'), MG = softHex('#C8407A');
+    const textile = (w, h, edges) => (x) => {
+      x.fillStyle = OR; x.fillRect(0, 0, w, h);
+      for (let j = 0; j < h / 64; j++) for (let i = 0; i < w / 64; i++){ const cx = 32 + i * 64 + (j % 2) * 32, cy = 40 + j * 64; cStar(x, cx, cy, 22, WH, YL); cDiamond(x, cx + 32, cy + 32, 5, 5, MG); }
+      edges.forEach(y => { x.fillStyle = GR; x.fillRect(0, y, w, 18); for (let px = 6; px < w; px += 12) cDiamond(x, px, y + 9, 4, 6, softHex('#1E3A28')); x.fillStyle = YL; x.fillRect(0, y, w, 2); x.fillRect(0, y + 16, w, 2); });
+    };
+    const panelTex = flip => canvasTex(128, 512, (x) => { textile(128, 512, [])(x); const ex = flip ? 106 : 0; x.fillStyle = GR; x.fillRect(ex, 0, 22, 512); for (let y = 6; y < 512; y += 12) cDiamond(x, ex + 11, y, 6, 4, softHex('#1E3A28')); x.fillStyle = YL; x.fillRect(flip ? 104 : 22, 0, 2, 512); }, { front:false });
+    const under = canvasTex(128, 128, (x, w, h) => { x.fillStyle = softHex('#1E1C22', 0.05); x.fillRect(0, 0, w, h); for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++){ const cx = i * 16 + 8, cy = j * 16 + 8; if ((i + j) % 2) cDiamond(x, cx, cy, 5, 5, WH); else cDot(x, cx, cy, 2, WH); } }, { rep:[2, 2] });
+    legs(col('#2A282E', 0.05));
+    torso(texM(under));
+    const ar = arms({ m: texM(under), rx: -0.42, rz: 0.1 });
+    head('short');
+    add(new THREE.CylinderGeometry(0.66, 0.74, 1.42, 40, 1, true, Math.PI - 1.95, 3.9), texM(canvasTex(512, 256, textile(512, 256, [0, 238, 120]), { front:false }), { side:THREE.DoubleSide }), 0, 2.06, 0);
+    add(lathe([[0.68, 2.76], [0.56, 2.86], [0.32, 2.93], [0.13, 2.96]], 40, Math.PI - 2.3, 4.6), texM(canvasTex(512, 64, textile(512, 64, [46]), { front:false }), { side:THREE.DoubleSide }));
+    [-1, 1].forEach(s => add(new THREE.BoxGeometry(0.26, 1.42, 0.04), texM(panelTex(s < 0)), s * 0.3, 2.06, 0.5).rotation.y = s * 0.35);
+    const nk = [], arcCols = [['#F8F1E4'], ['#C8323A'], ['#F8F1E4', '#1E1C22'], ['#C8323A', '#F2C84B', '#3E8C5A', '#2C4FA6']];
+    arcCols.forEach((cs, k) => { const n = 15 + k * 2; for (let i = 0; i <= n; i++){ const tt = i / n * 2 - 1, xx = tt * (0.15 + k * 0.025), yy = 2.86 - (0.3 + k * 0.09) * (1 - tt * tt); nk.push([xx, yy, frontZ(xx, yy, 0.05 + k * 0.012), cs[i % cs.length]]); } });
+    beads(nk, 0.022);
+    ['#C8323A', '#3E8C5A', '#F2C84B', '#2C4FA6'].forEach((c, k) => { const px = -0.06 + k * 0.04, yy = 2.26; add(new THREE.ConeGeometry(0.03, 0.16, 6), col(c), px, yy - 0.06, frontZ(px, yy, 0.09)).rotation.x = Math.PI; });
+    const fibre = canvasTex(256, 128, (x, w, h) => { for (let i = 0; i < w; i += 3){ const len = h * (0.55 + 0.45 * Math.abs(Math.cos(i / w * Math.PI))) * (0.86 + 0.14 * Math.abs(Math.sin(i * 1.7))); x.fillStyle = softHex(i % 2 ? '#E2CB94' : '#C9AE72', 0); x.fillRect(i, 0, 2, len); } });
+    add(new THREE.CylinderGeometry(0.12, 0.36, 0.48, 40, 1, true), fringeM(fibre), 0, 3.36, 0);
+    add(new THREE.SphereGeometry(0.15, 16, 8, 0, TAU, 0, Math.PI / 2), col('#D6BC82', 0), 0, 3.54, 0);
+    add(new THREE.ConeGeometry(0.035, 0.16, 6), col('#C8323A'), 0.27, 3.06, 0.02).rotation.x = Math.PI;
+    beads(strand(-0.29, 3.2, 0.03, 7, 0.035, ['#F8F1E4', '#C8323A', '#3E8C5A']), 0.018);
+    wristBand(ar[1], texM(canvasTex(64, 16, (x, w, h) => cBeads(x, w, h, ['#3E8C5A', '#F2C84B', '#1E1C22'], 8, '#3E8C5A'), { front:false })), 0.105, 0.035);
+    wristBand(ar[0], col('#D8C9A0'), 0.1, 0.018);
+  } else {
+    // Bagobo-Tagabawa: red blouse covered in cream zigzag and diamond beadwork, elbow-length sleeves, silver disc pendant,
+    // layered necklaces, beaded headband with pale feather plumes, abaca tube skirt with a bead-and-tassel hem, brass bangles
+    const RD = softHex('#B8202E'), CR = softHex('#F3E7CF', 0), BK = softHex('#1E1C22', 0.05), GD = softHex('#D9B04A');
+    const blouse = canvasTex(256, 256, (x, w, h) => {
+      x.fillStyle = RD; x.fillRect(0, 0, w, h);
+      const zz = (y, n) => { for (let k = 0; k < n; k++) cZig(x, 0, w, y + k * 7, 5, 10, k % 2 ? GD : CR, 2); };
+      zz(h * 0.04, 4); x.fillStyle = CR; x.fillRect(0, h * 0.18, w, 3);
+      for (let px = 8; px < w; px += 16) cDiamond(x, px, h * 0.26, 6, 8, CR, 2);
+      zz(h * 0.36, 3);
+      for (let px = 0; px < w; px += 32){ cDiamond(x, px + 16, h * 0.56, 12, 14, CR, 2.5); cDiamond(x, px + 16, h * 0.56, 5, 6, GD); }
+      zz(h * 0.72, 3); x.fillStyle = BK; x.fillRect(0, h * 0.88, w, 10); for (let px = 4; px < w; px += 8) cDot(x, px, h * 0.88 + 5, 2, CR);
+    }, { rep:[2, 1] });
+    const sleeve = canvasTex(128, 128, (x, w, h) => { x.fillStyle = RD; x.fillRect(0, 0, w, h); for (let k = 0; k < 4; k++) cZig(x, 0, w, h * 0.14 + k * 8, 5, 10, k % 2 ? GD : CR, 2); x.fillStyle = BK; x.fillRect(0, h * 0.74, w, h * 0.2); for (let px = 6; px < w; px += 12) cDiamond(x, px, h * 0.84, 5, 8, CR); x.fillStyle = GD; x.fillRect(0, h * 0.95, w, 4); });
+    const skirt = canvasTex(128, 256, (x, w, h) => {
+      x.fillStyle = softHex('#6A4A34'); x.fillRect(0, 0, w, h);
+      for (let y = 0; y < h; y += 32){ x.fillStyle = softHex('#C9A27A'); x.fillRect(0, y + 4, w, 3); cZig(x, 0, w, y + 14, 4, 8, softHex('#E2C9A0'), 2); x.fillStyle = softHex('#3A2A20'); x.fillRect(0, y + 22, w, 4); for (let px = 4; px < w; px += 12) cDiamond(x, px, y + 28, 3, 2.5, softHex('#C9A27A')); }
+    }, { rep:[3, 1] });
+    const anklet = texM(canvasTex(64, 16, (x, w, h) => cBeads(x, w, h, ['#D8342E', '#F3E7CF', '#1E1C22'], 8, '#D8342E'), { front:false }));
+    [-1, 1].forEach(s => { // bare lower legs and feet below a mid-calf skirt
+      add(new THREE.CylinderGeometry(0.1, 0.085, 0.42, 12), skin, s * 0.15, 0.27, 0);
+      add(new THREE.BoxGeometry(0.17, 0.08, 0.3), skin, s * 0.15, 0.04, 0.06);
+      add(new THREE.TorusGeometry(0.095, 0.022, 6, 16), anklet, s * 0.15, 0.13, 0).rotation.x = Math.PI / 2;
+    });
+    add(lathe([[0.44, 0.44], [0.42, 0.8], [0.41, 1.1], [0.40, 1.42]]), texM(skirt, { side:THREE.DoubleSide }));
+    add(new THREE.CylinderGeometry(0.445, 0.45, 0.12, 32, 1, true), fringeM(canvasTex(256, 32, (x, w, h) => cFringe(x, w, h, ['#F3E7CF', '#D8342E', '#1E1C22']), { rep:[2, 1] })), 0, 0.39, 0);
+    for (let k = 0; k < 14; k++){ const a = k / 14 * TAU; add(new THREE.ConeGeometry(0.025, 0.1, 6), col('#D8342E'), Math.sin(a) * 0.45, 0.28, Math.cos(a) * 0.45).rotation.x = Math.PI; }
+    torso(texM(blouse));
+    const ar = arms({ m: texM(sleeve), len: 0.62, rx: -0.25, rz: 0.12 });
+    head('short');
+    add(new THREE.SphereGeometry(0.1, 12, 10), hairM, 0, 3.3, -0.28);
+    const metal = h => std({ color: new THREE.Color(softHex(h, 0.1)), metalness:0.5, roughness:0.4 });
+    const dz = frontZ(0, 2.38, 0.06);
+    add(new THREE.CylinderGeometry(0.15, 0.15, 0.025, 32), metal('#C9C8C0'), 0, 2.38, dz).rotation.x = Math.PI / 2;
+    add(new THREE.TorusGeometry(0.075, 0.018, 8, 24), metal('#8A8A84'), 0, 2.38, dz + 0.02);
+    add(shell(2.74, 2.88, 0.03), texM(canvasTex(256, 32, (x, w, h) => cBeads(x, w, h, ['#F3E7CF', '#D8342E', '#1E1C22', '#D9B04A'], 8, '#1E1C22'), { rep:[2, 1] })));
+    const nk = [];
+    [['#F3E7CF', '#D8342E'], ['#1E1C22', '#D9B04A', '#F3E7CF']].forEach((cs, r) => { const n = 16 + r * 2; for (let i = 0; i <= n; i++){ const tt = i / n * 2 - 1, xx = tt * (0.16 + r * 0.04), yy = 2.82 - (0.24 + r * 0.14) * (1 - tt * tt); nk.push([xx, yy, frontZ(xx, yy, 0.05 + r * 0.01), cs[i % cs.length]]); } });
+    beads(nk, 0.02);
+    add(new THREE.CylinderGeometry(0.292, 0.292, 0.1, 28, 1, true), texM(canvasTex(256, 32, (x, w, h) => cBeads(x, w, h, ['#D8342E', '#F3E7CF', '#1E1C22'], 8, '#D8342E')), { side:THREE.DoubleSide }), 0, 3.38, 0);
+    const plumeM = col('#E8DCC0', 0.05), tipM = col('#8A7458', 0.1);
+    for (let k = 0; k < 11; k++){
+      const a = (k / 10 - 0.5) * 1.6, lean = 0.35 + 0.25 * Math.abs(k / 10 - 0.5);
+      const g = new THREE.Group(); g.position.set(0, 3.5, -0.12); g.rotation.set(-0.25 - (k % 2) * 0.12, 0, a * lean); fig.add(g);
+      add(new THREE.ConeGeometry(0.035, 0.85, 5), plumeM, 0, 0.42, 0, g); add(new THREE.ConeGeometry(0.02, 0.22, 5), tipM, 0, 0.92, 0, g);
+    }
+    [-1, 1].forEach(s => beads(strand(s * 0.26, 3.12, 0.04, 10, 0.035, ['#F3E7CF', '#D8342E', '#1E1C22']), 0.016));
+    ar.forEach(g => [0, 1, 2].forEach(k => { add(new THREE.TorusGeometry(0.1, 0.018, 8, 20), metal('#C9A85A'), 0, -0.92 - k * 0.06, 0, g).rotation.x = Math.PI / 2; }));
+  }
+  fig.position.y = -1.85;
+  const wrap = new THREE.Group(); wrap.add(fig); wrap.scale.setScalar(1.08);
+  return wrap;
+}
+
+/* ======================= dioramas ======================= */
+// Each landscape follows the description for its province. Heights are in scene units on a 14-unit plinth.
+const DIO = {
+  norte: {
+    coastal:false,
+    rivers:[[[-0.4,-2.4],[0.6,-0.6],[-0.3,1.4],[0.5,3.4],[0.1,5.2],[0.4,7]], [[-4.3,-2.2],[-2.8,-0.6],[-1.4,0.6],[-0.2,1.3]],
+            [[4.2,-2.6],[3.0,-0.4],[1.6,1.6],[0.45,3.2]], [[2.5,-3.8],[2.0,-2.0],[0.7,-0.8]], [[-3.6,2.4],[-2.0,3.0],[0.2,4.4]]],
+    h(x, z){
+      let h = 0.08 + 0.08 * (fbm(x * .5, z * .5) - 0.4);
+      h += 1.9 * ridgeF(x, z, -5.4, -6, -5.1, 3.5, 1.1) * (0.75 + 0.5 * ridged(x * .6, z * .6));        // western range
+      h += 1.7 * ridgeF(x, z, 5.3, -5.5, 5.1, 3.0, 1.0) * (0.75 + 0.5 * ridged(x * .6 + 5, z * .6));    // eastern range
+      h += 3.6 * gauss2(x, z, -0.6, -4.8, 2.4) * (0.55 + 0.7 * ridged(x * .55 + 2, z * .55));           // northern highlands
+      let d = Infinity; for (const r of this.rivers) d = Math.min(d, lineD(x, z, r));
+      h = lerp(-0.08, h, smooth(0.16, 0.4, d));                                                          // river network
+      h -= 2 * smooth(5.5, 6.2, z + 0.3 * Math.sin(x * 0.8));                                            // Davao Gulf to the south
+      return h;
+    }
+  },
+  oro: {
+    coastal:false,
+    valleys:[[[-6.8,-1.5],[-3.5,-0.5],[-1,0.8],[1.5,0.2],[4,1.4],[6.8,2.2]], [[-1.8,6.8],[-1.2,3.8],[-1,0.8]], [[2.1,-4.2],[1.8,-2.6],[1.5,0.2]]],
+    h(x, z){
+      let h = 1.2 + 2.6 * Math.pow(ridged(x * .32 + 3, z * .32), 1.4) + 0.5 * (fbm(x * .8, z * .8) - 0.4);
+      h *= 0.55 + 0.45 * smooth(6.6, 4.5, Math.hypot(x, z));
+      for (const v of this.valleys){ const d = lineD(x, z, v); h = lerp(0.35, h, smooth(0.6, 1.4, d)); h = lerp(-0.07, h, smooth(0.12, 0.26, d)); }
+      const dm = Math.hypot(x - 3.4, z + 3.2);
+      h += 1.6 * smooth(1.4, 2.0, dm) * smooth(3.0, 2.1, dm);                                           // rim around the high valley
+      const mv = smooth(1.8, 1.2, dm); h = h * (1 - mv) + 1.65 * mv;                                    // cold highland valley floor
+      return h;
+    }
+  },
+  oriental: {
+    coastal:true,
+    estuary:[[0.6,3.0],[1.6,3.9],[2.5,4.5],[3.4,4.9]],
+    h(x, z){
+      const coast = 2.9 + 0.35 * Math.sin(z * 0.9);
+      const head = smooth(2.0, 1.25, Math.hypot(x - 3.8, z + 3.4));
+      const s = Math.max(x - coast, 1.55 - Math.hypot(x - 3.7, z - 1.2));                              // sea + white-sand bay
+      if (s >= 0 && head < 0.5) return -0.1 - Math.min(s, 1) * 0.12;
+      let h = 0.22 + 0.06 * (fbm(x, z) - 0.4);                                                           // coastal plain
+      h += 3.3 * smooth(1.3, -0.5, x) * (0.65 + 0.55 * ridged(x * .5, z * .5 + 4));                      // abrupt Pacific Cordillera
+      h += 1.7 * coneF(x, z, -2.7, 3.7, 2.6, 1.2);                                                       // Hamiguitan range
+      h += 1.9 * head;                                                                                   // headland: ocean cliffs
+      const beach = smooth(-0.6, -0.12, s) * (1 - head);
+      h = h * (1 - beach) + 0.07 * beach;
+      const d = lineD(x, z, this.estuary); h = lerp(-0.08, h, smooth(0.14, 0.32, d));                    // estuary for mangroves
+      return h;
+    }
+  },
+  occidental: {
+    coastal:true,
+    h(x, z){
+      const coast = 3.5 + 0.4 * Math.sin(z * 0.7 + 1), s = x - coast;
+      if (s > 0) return -0.1 - Math.min(s, 1) * 0.12;
+      let h = 0.45 + 3.5 * Math.pow(ridged(x * .38 + 7, z * .38 - 2), 1.25) * smooth(coast + 0.2, coast - 2.6, x);
+      h += 1.3 * ridgeF(x, z, -4.5, -5.5, -3.2, 5.5, 1.2);                                              // mountain spine
+      h += 1.3 * smooth(0.6, -1.0, z) * smooth(coast - 1.8, coast - 0.3, x);                              // north: cliffs straight into the gulf
+      const bw = 0.65 * smooth(0, 1.2, z);                                                               // south: narrow beaches
+      if (s > -bw) h = 0.07;
+      return h;
+    }
+  },
+  sur: {
+    coastal:true,
+    h(x, z){
+      const coast = 5.0 + 0.3 * Math.sin(z * 0.9), s = x - coast;
+      if (s > 0) return -0.1 - Math.min(s, 1) * 0.12;
+      let h = 0.2 + 0.06 * (fbm(x * .7, z * .7) - 0.4);                                                  // fertile plain
+      h += 4.9 * coneF(x, z, -1.8, -1.9, 4.6, 1.75);                                                     // Mt. Apo
+      h -= 0.45 * gauss2(x, z, -1.8, -1.9, 0.35);                                                        // summit hollow
+      h += 2.4 * coneF(x, z, -5.0, 2.6, 2.3, 1.5);                                                       // second volcanic peak
+      const dA = Math.hypot(x + 1.8, z + 1.9);
+      h += 0.9 * smooth(2.6, 3.6, dA) * smooth(6.2, 4.8, dA) * fbm(x * .9 + 3, z * .9);                 // rolling foothills
+      if (s > -0.45) h = 0.07;                                                                           // beach on the gulf
+      return h;
+    }
+  }
+};
+const LTD = 0.3, DN = 140, DCELL = 0.1, DR = 6.65;
+const qTop = h => h <= 0 ? 0 : Math.max(0, Math.floor(h / LTD + 0.5)) * LTD;
+
+let dio = null, GEO = null;
+function geos(){
+  if (GEO) return GEO;
+  GEO = {
+    trunk: new THREE.CylinderGeometry(0.05, 0.07, 0.4, 5), cone: new THREE.ConeGeometry(0.36, 0.8, 6), cone2: new THREE.ConeGeometry(0.26, 0.6, 6),
+    ico: new THREE.IcosahedronGeometry(0.42, 0), ico2: new THREE.IcosahedronGeometry(0.28, 0), leaf: new THREE.BoxGeometry(0.46, 0.02, 0.13),
+    palmTrunk: new THREE.CylinderGeometry(0.035, 0.055, 1.3, 5), stem: new THREE.CylinderGeometry(0.045, 0.06, 0.5, 5), root: new THREE.CylinderGeometry(0.015, 0.02, 0.4, 4),
+    paddy: new THREE.BoxGeometry(0.6, 0.05, 0.5), rock: new THREE.IcosahedronGeometry(0.2, 0)
+  };
+  return GEO;
+}
+function Batch(){
+  const map = new Map(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
+  return {
+    put(geo, mat, x, y, z, sx = 1, sy = sx, sz = sx, rx = 0, ry = 0, rz = 0){
+      e.set(rx, ry, rz); q.setFromEuler(e); p.set(x, y, z); s.set(sx, sy, sz); m4.compose(p, q, s);
+      const k = geo.uuid + mat.uuid; if (!map.has(k)) map.set(k, { geo, mat, list: [] }); map.get(k).list.push(m4.clone());
+    },
+    build(parent){
+      map.forEach(({ geo, mat, list }) => {
+        const im = new THREE.InstancedMesh(geo, mat, list.length);
+        list.forEach((m, i) => im.setMatrixAt(i, m)); im.instanceMatrix.needsUpdate = true; im.castShadow = im.receiveShadow = true; parent.add(im);
+      });
+    }
+  };
+}
+
+function buildDiorama(i){
+  const p = PROVS[i], def = DIO[p.id];
+  const { landMat, sideMat, reg, slabPolys } = three;
+  const G = geos();
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(innerWidth < innerHeight ? 50 : 36, innerWidth / innerHeight, 0.5, 300);
+  const g = new THREE.Group(); scene.add(g);
+  const anim = [];
+  const mat = (spec, extra) => reg(new THREE.MeshStandardMaterial(Object.assign({ roughness:0.95, flatShading:true }, extra || {})), spec);
+  const M = {
+    conifer: mat({ base:'leaf', mix:'ink', amt:0.32 }), broad: mat({ base:'leaf', mix:'tide', amt:0.32 }), broad2: mat({ base:'leaf', mix:'ink', amt:0.18 }),
+    moss: mat({ base:'leaf', mix:'edge', amt:0.18 }), palm: mat({ base:'leaf', mix:'gold', amt:0.25 }), banana: mat({ base:'leaf', mix:'gold', amt:0.42 }),
+    mangrove: mat({ base:'leaf', mix:'ink', amt:0.48 }), trunk: mat({ base:'clay', mix:'ink', amt:0.35 }), stone: mat({ base:'rest', mix:'ink', amt:0.3 }),
+    lime: mat({ base:'rest', mix:'ink', amt:0.1 }), goldRock: mat({ base:'gold', mix:'edge', amt:0.1 }, { metalness:0.35, roughness:0.5 }),
+    water: mat({ base:'sea', mix:'ink', amt:0.08 }, { flatShading:false }), foam: mat({ base:'edge' }, { transparent:true, opacity:0.9 }),
+    sand: mat({ base:'gold', mix:'edge', amt:0.68 }), fieldA: mat({ base:'gold', mix:'edge', amt:0.25 }), fieldB: mat({ base:'leaf', mix:'edge', amt:0.15 }),
+    paddyW: mat({ base:'sea', mix:'leaf', amt:0.35 }), floor: mat({ base:'paper' }, { flatShading:false }), fruit: mat({ base:'leaf', mix:'ink', amt:0.25 })
+  };
+  const foamMat = op => mat({ base:'edge' }, { transparent:true, opacity:op });
+
+  // terrain grid on a disc, traced into contour sheets
+  const vals = new Float64Array(DN * DN), wv = new Float64Array(DN * DN), H = (x, z) => def.h(x, z);
+  for (let j = 0; j < DN; j++) for (let k = 0; k < DN; k++){
+    const x = -7 + (k + 0.5) * DCELL, z = -7 + (j + 0.5) * DCELL, idx = j * DN + k;
+    if (Math.hypot(x, z) < DR){ const h = H(x, z); vals[idx] = h; wv[idx] = -h; } else { vals[idx] = -1; wv[idx] = -1; }
+  }
+  const toXY = (cx, cy) => [-7 + cx * DCELL, -(-7 + cy * DCELL)];
+  const th = []; for (let k = 1; k <= 18; k++) th.push((k - 0.5) * LTD);
+  traceLevels(vals, DN, DN, th, toXY, 0.03, 0.035).forEach(L => g.add(slabPolys(L.polys, LTD, landMat(p.col, L.lvl), (L.lvl - 1) * LTD)));
+  traceLevels(wv, DN, DN, [0.02], toXY, 0.02, 0.035).forEach(L => { const m = slabPolys(L.polys, 0.04, M.water, 0.012); m.castShadow = false; g.add(m); });
+
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), M.floor); floor.rotation.x = -Math.PI / 2; floor.position.y = -1.4; floor.receiveShadow = true; scene.add(floor);
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(7, 7.25, 1.4, 96), [sideMat, def.coastal ? M.sand : landMat(p.col, 0), sideMat]);
+  plinth.position.y = -0.7; plinth.receiveShadow = plinth.castShadow = true; g.add(plinth);
+
+  // props
+  let sd = 1234 + i * 977; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  const B = Batch();
+  const land = (x, z, m = 0.3) => Math.hypot(x, z) < DR - m && H(x, z) > 0.02;
+  const conifer = (x, z, s = 1) => { const y = qTop(H(x, z)); B.put(G.trunk, M.trunk, x, y + 0.2 * s, z, s); B.put(G.cone, M.conifer, x, y + 0.68 * s, z, s); B.put(G.cone2, M.conifer, x, y + 1.02 * s, z, s); };
+  const broad = (x, z, s = 1, m = M.broad) => { const y = qTop(H(x, z)); B.put(G.trunk, M.trunk, x, y + 0.2 * s, z, s); B.put(G.ico, m, x, y + 0.62 * s, z, s, s * 0.9, s, 0, rnd() * 3, 0); };
+  const palm = (x, z, s = 1) => {
+    const y = qTop(H(x, z)), lean = (rnd() - 0.5) * 0.25;
+    B.put(G.palmTrunk, M.trunk, x, y + 0.65 * s, z, s, s, s, 0, 0, lean);
+    const tx = x - Math.sin(lean) * 1.3 * s, ty = y + 1.3 * s;
+    for (let k = 0; k < 7; k++){ const a = k / 7 * TAU + rnd(); B.put(G.leaf, M.palm, tx + Math.cos(a) * 0.22 * s, ty, z + Math.sin(a) * 0.22 * s, s * 1.3, s, s, 0, -a, -0.45); }
+  };
+  const banana = (x, z, s = 1) => {
+    const y = qTop(H(x, z)); B.put(G.stem, M.trunk, x, y + 0.25 * s, z, s);
+    for (let k = 0; k < 6; k++){ const a = k / 6 * TAU + rnd(); B.put(G.leaf, M.banana, x + Math.cos(a) * 0.2 * s, y + 0.52 * s, z + Math.sin(a) * 0.2 * s, s * 1.1, s, s * 1.6, 0, -a, -0.55); }
+  };
+  const mangrove = (x, z) => {
+    for (let k = 0; k < 3; k++){ const a = k / 3 * TAU; B.put(G.root, M.trunk, x + Math.cos(a) * 0.1, 0.18, z + Math.sin(a) * 0.1, 1, 1, 1, Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5); }
+    B.put(G.ico2, M.mangrove, x, 0.48, z, 1.3, 0.75, 1.3);
+  };
+  function scatter(n, test, fn){ for (let k = 0; k < n; k++){ const a = rnd() * TAU, r = Math.sqrt(rnd()) * DR, x = Math.cos(a) * r, z = Math.sin(a) * r; if (!land(x, z)) continue; const h = H(x, z); if (test(x, z, h)) fn(x, z, h); } }
+  const towers = [], falls = [];
+
+  if (p.id === 'norte'){
+    // flat lowlands with rice fields and banana plantations, rivers, ranges east and west, northern highlands
+    for (let x = -4.6; x <= 4.6; x += 0.7) for (let z = -1.6; z <= 5.2; z += 0.6){
+      const h = H(x, z); if (!land(x, z, 0.6) || h > 0.15) continue;
+      let d = Infinity; for (const r of def.rivers) d = Math.min(d, lineD(x, z, r)); if (d < 0.5) continue;
+      if (x > 1.9 && x < 4.4 && z < 4.2){ banana(x + (rnd() - .5) * .1, z, 0.85); banana(x + 0.35, z + 0.3, 0.8); }
+      else B.put(G.paddy, ((Math.round(x * 1.43) + Math.round(z * 1.7)) % 3 === 0) ? M.paddyW : (((Math.round(x) + Math.round(z)) & 1) ? M.fieldA : M.fieldB), x, 0.025, z, 1, 1, 1, 0, 0.08, 0);
+    }
+    scatter(420, (x, z, h) => h > 0.6, (x, z, h) => (h > 1.8 && rnd() > 0.4) ? conifer(x, z, 0.75) : broad(x, z, 0.8));
+  } else if (p.id === 'oro'){
+    // steep gold-bearing mountains, flat river valleys, karst towers, cold highland valley, tiered waterfall, rainforest
+    scatter(700, (x, z, h) => h > 0.5 && Math.hypot(x - 3.4, z + 3.2) > 1.3 && Math.hypot(x + 3.7, z - 3.7) > 1.7, (x, z) => broad(x, z, 0.7 + rnd() * 0.3, rnd() > 0.5 ? M.broad : M.broad2));
+    scatter(60, (x, z, h) => h > 0.15 && h < 0.5, (x, z) => B.put(G.paddy, rnd() > 0.5 ? M.fieldA : M.fieldB, x, qTop(H(x, z)) + 0.025, z, 0.8, 1, 0.8, 0, rnd() * 3, 0));
+    scatter(40, (x, z, h) => h > 2.2, (x, z) => B.put(G.rock, M.goldRock, x, qTop(H(x, z)) + 0.1, z, 1 + rnd(), 0.7, 1, rnd(), rnd(), rnd()));
+    [[-3.8,3.6,2.4],[-4.6,2.4,3.0],[-3.0,4.6,1.9],[-4.9,4.0,2.2],[-3.2,2.8,2.7],[-2.2,3.9,1.6],[-4.1,5.1,1.7]].forEach(tw => towers.push(tw));
+    falls.push([2.0, -4.2]);
+    for (let k = 0; k < 4; k++){
+      const mist = new THREE.Mesh(new THREE.CylinderGeometry(0.9 + k * 0.2, 0.9 + k * 0.2, 0.08, 24), foamMat(0.45));
+      mist.position.set(3.4 + (k - 1.5) * 0.5, 2.25 + k * 0.08, -3.2 + (k % 2) * 0.4); g.add(mist);
+      anim.push(tt => { mist.position.x = 3.4 + (k - 1.5) * 0.5 + Math.sin(tt * 0.4 + k) * 0.35; });
+    }
+  } else if (p.id === 'oriental'){
+    // coastal plain rising abruptly into the Pacific Cordillera; cliffs, white-sand bay, mangroves; pygmy forest on Hamiguitan
+    scatter(520, (x, z, h) => h > 0.7 && Math.hypot(x + 2.7, z - 3.7) > 1.15, (x, z, h) => (h > 2.2 && rnd() > 0.5) ? conifer(x, z, 0.75) : broad(x, z, 0.8));
+    scatter(420, (x, z, h) => Math.hypot(x + 2.7, z - 3.7) < 1.15 && h > 1.5, (x, z) => broad(x, z, 0.28 + rnd() * 0.08, M.moss)); // pygmy forest
+    scatter(240, (x, z, h) => h < 0.18 && x > 1.4 && x < 3.4 && z > 3.4 && lineD(x, z, def.estuary) < 0.7, (x, z) => mangrove(x, z));
+    scatter(70, (x, z, h) => h > 0.15 && h < 0.4 && x > 0.6, (x, z) => palm(x, z, 0.75));
+    for (let k = 0; k < 9; k++){
+      const wv2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.03, 0.06), foamMat(0.8));
+      const bx = 3.7 + (k % 3) * 0.8, bz = -1.5 + k * 0.75; wv2.position.set(bx, 0.07, bz); wv2.rotation.y = Math.PI / 2; g.add(wv2);
+      anim.push(tt => { wv2.position.x = bx + Math.sin(tt * 0.9 + k) * 0.25; wv2.material.opacity = 0.55 + Math.sin(tt * 0.9 + k) * 0.35; });
+    }
+  } else if (p.id === 'occidental'){
+    // rugged hardwood-forested mountains; coconut plantations down to the shore; cliffs and beaches on the gulf
+    scatter(820, (x, z, h) => h > 0.5 && !(x > 1.2 && z > 0.6 && h < 1.4), (x, z) => broad(x, z, 0.85 + rnd() * 0.35, rnd() > 0.4 ? M.broad2 : M.broad));
+    for (let z = 0.8; z <= 6; z += 0.55) for (let x = 1.2; x <= 4.0; x += 0.55){
+      const h = H(x, z); if (!land(x, z, 0.5) || h > 1.4) continue; palm(x + (rnd() - .5) * .15, z, 0.8);
+    }
+  } else {
+    // Mt. Apo and a second volcanic peak; rolling foothills; plantations on fertile plains; mossy forest high on the mountain
+    scatter(900, (x, z, h) => h > 1.4 && h < 3.2, (x, z) => broad(x, z, 0.55 + rnd() * 0.15, M.moss));
+    scatter(260, (x, z, h) => h > 0.5 && h <= 1.4, (x, z) => broad(x, z, 0.8));
+    for (let x = 0.4; x <= 4.4; x += 0.48) for (let z = 1.4; z <= 6.2; z += 0.48){
+      const h = H(x, z); if (!land(x, z, 0.5) || h > 0.3 || h < 0.15) continue;
+      const ty = qTop(h); B.put(G.trunk, M.trunk, x, ty + 0.12, z, 0.6); B.put(G.ico2, M.fruit, x, ty + 0.38, z, 0.9);
+    }
+    for (let x = 1.0; x <= 4.4; x += 0.7) for (let z = -5.2; z <= 0.6; z += 0.55){
+      const h = H(x, z); if (!land(x, z, 0.6) || h > 0.3) continue; B.put(G.paddy, ((Math.round(x * 1.4) + Math.round(z * 1.8)) & 1) ? M.fieldA : M.fieldB, x, qTop(h) + 0.025, z, 1.1, 1, 1);
+    }
+    const cg = new THREE.Group();
+    [[0,0,1.0],[0.9,0.1,0.75],[-0.85,0.05,0.7]].forEach(([x, y, r]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.14, 24), M.foam); c.position.set(x, y, 0); c.castShadow = true; cg.add(c); });
+    cg.position.set(-1.8, qTop(H(-1.8, -1.9)) + 1.4, -1.9); g.add(cg);
+    anim.push(tt => { cg.position.x = -1.8 + Math.sin(tt * 0.3) * 1.3; });
+  }
+  B.build(g);
+  towers.forEach(([x, z, hh]) => {
+    const y = qTop(H(x, z));
+    const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.52, hh, 8), M.lime); tw.position.set(x, y + hh / 2, z); tw.castShadow = tw.receiveShadow = true; g.add(tw);
+    const cap = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), M.broad); cap.position.set(x, y + hh + 0.12, z); cap.scale.set(1, 0.55, 1); cap.castShadow = true; g.add(cap);
+  });
+  falls.forEach(([x, z]) => {
+    const y0 = qTop(H(x, z + 1.6));
+    [[1.9, 1.3, 1.9, 0.65, 0], [1.4, 1.0, 1.3, 1.8, -0.3], [1.0, 0.8, 0.8, 2.7, -0.55]].forEach(([w, hh, d, yy, dz], k) => {
+      const tier = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), M.stone); tier.position.set(x, y0 + yy - hh / 2 + 0.05, z + dz); tier.castShadow = tier.receiveShadow = true; g.add(tier);
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.36, hh + 0.05), foamMat(0.85)); f.position.set(x, y0 + yy - hh / 2 + 0.05, z + dz + d / 2 + 0.01); g.add(f);
+      anim.push(tt => { f.material.opacity = 0.75 + Math.sin(tt * 9 + k) * 0.15; f.scale.x = 1 + Math.sin(tt * 7 + k) * 0.06; });
+      const pool = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.03, 16), M.water); pool.position.set(x, y0 + yy - hh + 0.06, z + dz + d / 2 + 0.25); g.add(pool);
+    });
+  });
+
+  // empty instrument stand, filled only once sourced
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 1.1), sideMat); stand.position.set(4.6, -0.9, 8.2); stand.castShadow = stand.receiveShadow = true; scene.add(stand);
+  const standTag = new THREE.Vector3(4.6, -0.2, 8.2);
+
+  scene.add(new THREE.HemisphereLight(0xfffaf0, 0xb0a898, 0.62));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.82);
+  sun.position.set(-9, 18, 7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
+  Object.assign(sun.shadow.camera, { left:-12, right:12, top:12, bottom:-12, near:1, far:60 }); sun.shadow.camera.updateProjectionMatrix();
+  scene.add(sun);
+
+  /* ---------- the centre topic piece ---------- */
+  const TOPIC_Y = 7.2;
+  const holder = new THREE.Group(); holder.position.set(0, TOPIC_Y, 0); scene.add(holder);
+  const pm = {
+    paper: mat({ base:'edge' }), ink: mat({ base:'ink' }), accent: mat({ base:p.col }), accent2: mat({ base:p.col, mix:'edge', amt:0.45 }),
+    gold: mat({ base:'gold' }), clay: mat({ base:'clay' }), coral: mat({ base:'coral' }), leaf: mat({ base:'leaf' }), leaf2: mat({ base:'leaf', mix:'ink', amt:0.2 }),
+    glass: mat({ base:'sea' }, { transparent:true, opacity:0.45, side:THREE.DoubleSide }), soil: mat({ base:'clay', mix:'ink', amt:0.25 })
+  };
+  const mesh = (geo, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; return o; };
+  const BUILD = {
+    identity(){ return buildFigure(p.id); }, // stylised figure in attire from the reference photo
+    myth(){ // an open storybook
+      const w = new THREE.Group();
+      [-1, 1].forEach(sx => {
+        const half = new THREE.Group(); half.rotation.z = sx * 0.14;
+        half.add(mesh(new THREE.BoxGeometry(1.5, 0.06, 2.0), pm.accent, sx * 0.76, -0.06, 0));
+        half.add(mesh(new THREE.BoxGeometry(1.4, 0.16, 1.88), pm.paper, sx * 0.72, 0.05, 0));
+        for (let k = 0; k < 4; k++) half.add(mesh(new THREE.BoxGeometry(k === 3 ? 0.5 : 0.9, 0.01, 0.06), pm.ink, sx * 0.72, 0.14, -0.55 + k * 0.32));
+        w.add(half);
+      });
+      const pivot = new THREE.Group(); pivot.add(mesh(new THREE.BoxGeometry(1.4, 0.012, 1.84), pm.paper, 0.72, 0, 0)); pivot.position.y = 0.16; w.add(pivot);
+      w.userData.tick = tt => { const u = (tt * 0.35) % 1; pivot.rotation.z = 0.14 + Math.min(1, u * 1.6) * (Math.PI - 0.28); };
+      w.rotation.x = 0.5; return w;
+    },
+    meaning(){ // a magnifier over a written card
+      const w = new THREE.Group();
+      w.add(mesh(new THREE.BoxGeometry(2.4, 0.05, 1.6), pm.paper, 0, -0.9, 0));
+      for (let k = 0; k < 4; k++) w.add(mesh(new THREE.BoxGeometry(k === 3 ? 1.0 : 1.7, 0.01, 0.07), pm.ink, -0.1, -0.86, -0.5 + k * 0.33));
+      const lens = new THREE.Group();
+      lens.add(mesh(new THREE.TorusGeometry(0.85, 0.12, 10, 36), pm.accent));
+      lens.add(new THREE.Mesh(new THREE.CircleGeometry(0.85, 36), pm.glass));
+      lens.add(mesh(new THREE.CylinderGeometry(0.11, 0.14, 1.4, 8), pm.clay, 0, -1.55, 0));
+      lens.rotation.set(-0.9, 0, 0.5); lens.position.set(0.2, 0.25, 0.1); w.add(lens);
+      w.userData.tick = tt => { lens.position.x = 0.2 + Math.cos(tt * 1.2) * 0.35; lens.position.z = 0.1 + Math.sin(tt * 1.2) * 0.25; };
+      return w;
+    },
+    music(){ // generic notes and sound rings, no instrument is drawn
+      const w = new THREE.Group(), head = new THREE.SphereGeometry(0.32, 14, 10);
+      [[-0.7, -0.6], [0.7, -0.3]].forEach(([x, y]) => { const hd = mesh(head, pm.ink, x, y, 0); hd.scale.set(1.3, 0.85, 0.85); hd.rotation.z = 0.35; w.add(hd); w.add(mesh(new THREE.BoxGeometry(0.09, 1.7, 0.09), pm.ink, x + 0.36, y + 0.82, 0)); });
+      const beam = mesh(new THREE.BoxGeometry(1.52, 0.22, 0.12), pm.accent, 0.06, 1.38, 0); beam.rotation.z = 0.2; w.add(beam);
+      const rings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.035, 6, 48), mat({ base:p.col, mix:'edge', amt:0.45 }, { transparent:true })); w.add(r); return r; });
+      w.userData.tick = tt => rings.forEach((r, k) => { const u = (tt * 0.6 + k / 3) % 1; r.scale.setScalar(0.7 + u * 1.2); r.material.opacity = 1 - u; });
+      return w;
+    },
+    performance(){ // a round stage under a turning sun and moon: when and where
+      const w = new THREE.Group();
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, 0.32, 44), [pm.paper, pm.accent, pm.paper]); st.position.y = -0.9; st.castShadow = true; w.add(st);
+      w.add(mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.34, 44), pm.accent2, 0, -0.89, 0));
+      const orbit = new THREE.Group(); orbit.position.y = -0.7;
+      orbit.add(mesh(new THREE.SphereGeometry(0.3, 16, 12), pm.gold, 1.9, 0, 0));
+      orbit.add(mesh(new THREE.SphereGeometry(0.22, 16, 12), pm.paper, -1.9, 0, 0));
+      orbit.add(new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.015, 4, 64), pm.ink));
+      w.add(orbit);
+      w.userData.tick = tt => { orbit.rotation.z = tt * 0.8; };
+      return w;
+    },
+    significance(){ // a rooted tree on a floating clod of soil
+      const w = new THREE.Group();
+      w.add(mesh(new THREE.CylinderGeometry(1.1, 0.7, 0.5, 9), pm.soil, 0, -1.0, 0));
+      w.add(mesh(new THREE.CylinderGeometry(1.12, 1.12, 0.06, 9), pm.leaf, 0, -0.72, 0));
+      w.add(mesh(new THREE.CylinderGeometry(0.12, 0.2, 1.3, 7), pm.clay, 0, -0.05, 0));
+      [[0, 0.95, 0, 0.75], [0.55, 0.7, 0.2, 0.55], [-0.5, 0.75, -0.15, 0.55], [0.1, 0.65, -0.55, 0.5]].forEach(([x, y, z, r]) => w.add(mesh(new THREE.IcosahedronGeometry(r, 0), x > 0 ? pm.leaf : pm.leaf2, x, y, z)));
+      for (let k = 0; k < 6; k++){ const a = k / 6 * TAU, rt = mesh(new THREE.ConeGeometry(0.07, 1.0, 5), pm.soil, Math.cos(a) * 0.4, -1.65, Math.sin(a) * 0.4); rt.rotation.set(Math.sin(a) * 0.5 + Math.PI, 0, -Math.cos(a) * 0.5); w.add(rt); }
+      return w;
+    },
+    sources(){ // a stack of books with a bookmark
+      const w = new THREE.Group();
+      [[1.9, 0.32, 1.35, pm.accent, -1.0, 0.1], [1.7, 0.28, 1.25, pm.clay, -0.68, -0.15], [1.8, 0.3, 1.3, pm.gold, -0.37, 0.22]].forEach(([bw, bh, bd, m, y, r]) => {
+        const b = new THREE.Group(); b.add(mesh(new THREE.BoxGeometry(bw, bh, bd), m)); b.add(mesh(new THREE.BoxGeometry(bw * 0.96, bh * 0.75, bd * 0.98), pm.paper, 0.04, 0, 0.02)); b.position.y = y; b.rotation.y = r; w.add(b);
+      });
+      w.add(mesh(new THREE.BoxGeometry(0.1, 0.7, 0.012), pm.coral, 0.5, -0.5, 0.82));
+      const tag = mesh(new THREE.BoxGeometry(0.8, 0.5, 0.02), pm.paper, -0.6, 0.15, 0.3); tag.rotation.set(0, 0.4, 0.2); w.add(tag);
+      return w;
+    }
+  };
+  const models = {};
+  const modelFor = k => models[k] || (models[k] = BUILD[TOPICS[k]]());
+  let curTopic = 0, pending = 0, spinT = -1, swapped = false, baseAng = 0;
+  holder.add(modelFor(0));
+  // cartoon whip-spin effects: speed streaks and a paper poof ring
+  const streakMat = mat({ base:'edge' }, { transparent:true, opacity:0, side:THREE.DoubleSide });
+  const streaks = new THREE.Group(); scene.add(streaks);
+  for (let k = 0; k < 5; k++){ const s = new THREE.Mesh(new THREE.TorusGeometry(2.2 + k * 0.12, 0.04, 4, 24, 1.3), streakMat); s.rotation.set(Math.PI / 2, 0, k * 1.25); s.position.y = -0.8 + k * 0.4; streaks.add(s); }
+  const poofMat = mat({ base:'edge' }, { transparent:true, opacity:0 });
+  const poof = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.09, 6, 48), poofMat); poof.rotation.x = Math.PI / 2; scene.add(poof);
+  let poofT = 1;
+  const TURNS = 4, DUR = 1.425; // 1.5× slower than the first pass (0.95 s)
+  function swap(k){ holder.remove(holder.children[0]); holder.add(modelFor(k)); curTopic = k; updateTopicUI(); }
+  function startSpin(){ if (reduceMQ.matches){ swap(pending); return; } spinT = 0; swapped = false; }
+  const standEl = $('#dio-tag'), v = new THREE.Vector3();
+  const easeOut = u => 1 - Math.pow(1 - u, 3);
+  const state = { az: -0.55, el: 0.42, dragging: false, idle: 0 };
+  function theme(){ scene.background = new THREE.Color(three.tokens.paper); }
+  theme();
+
+  return {
+    scene, cam, active:false, state, theme,
+    get topic(){ return curTopic; },
+    setTopic(k){ pending = k; if (spinT < 0 && k !== curTopic) startSpin(); },
+    reset(){ pending = 0; spinT = -1; holder.scale.setScalar(1); if (curTopic !== 0) swap(0); },
+    tick(dt, tt){
+      if (!state.dragging){ state.idle += dt; if (state.idle > 1.2 && !reduceMQ.matches) state.az += dt * 0.067; }
+      const tall = innerWidth <= 760 || innerWidth < innerHeight * 0.9, dist = tall ? 34 : 27;
+      cam.position.set(Math.sin(state.az) * Math.cos(state.el) * dist, 3.2 + Math.sin(state.el) * dist, Math.cos(state.az) * Math.cos(state.el) * dist);
+      cam.lookAt(0, 3.2, 0);
+      frameOffset(cam, 1, 0.21, 0.27);
+      anim.forEach(f => f(tt));
+
+      let streak = 0;
+      if (spinT >= 0){
+        spinT += dt / DUR; const u0 = Math.min(1, spinT);
+        let ang, sy, sxz, lift = 0;
+        if (u0 < 0.16){ const u = easeOut(u0 / 0.16); ang = -0.55 * u; sy = 1 - 0.26 * u; sxz = 1 + 0.18 * u; lift = -0.3 * u; }          // wind-up squash
+        else if (u0 < 0.62){                                                                                                               // whip spin
+          const u = (u0 - 0.16) / 0.46, e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2, s = Math.sin(u * Math.PI);
+          ang = -0.55 + (TURNS * TAU + 0.55) * e; sy = 1 + 0.32 * s; sxz = 1 - 0.18 * s; lift = 1.3 * s; streak = s;
+          if (!swapped && u >= 0.5){ swap(pending); swapped = true; poofT = 0; }
+          if (swapped){ const pop = 0.55 + 0.45 * Math.min(1, (u - 0.5) * 4); sy *= pop; sxz *= pop; }
+        } else {                                                                                                                           // squash-and-wobble settle
+          const u = (u0 - 0.62) / 0.38, dec = 1 - u;
+          ang = TURNS * TAU + 0.4 * Math.sin(u * Math.PI * 3) * dec; sy = 1 - 0.24 * Math.sin(u * Math.PI * 4) * dec; sxz = 1 + 0.16 * Math.sin(u * Math.PI * 4) * dec;
+        }
+        holder.rotation.y = baseAng + ang; holder.scale.set(sxz, sy, sxz); holder.position.y = TOPIC_Y + lift;
+        if (spinT >= 1){ spinT = -1; baseAng += TURNS * TAU; holder.scale.setScalar(1); if (pending !== curTopic) startSpin(); }
+      } else {
+        baseAng += dt * (reduceMQ.matches ? 0 : 0.3); holder.rotation.y = baseAng; holder.scale.setScalar(1);
+        holder.position.y = TOPIC_Y + (reduceMQ.matches ? 0 : Math.sin(tt * 1.4) * 0.15);
+      }
+      streakMat.opacity = streak * 0.85; streaks.visible = streak > 0.02; streaks.rotation.y += dt * 22 * streak; streaks.position.y = holder.position.y;
+      if (poofT < 1){ poofT = Math.min(1, poofT + dt / 0.675); poof.visible = true; poof.position.y = holder.position.y; poof.scale.setScalar(0.5 + easeOut(poofT) * 2.4); poofMat.opacity = 1 - poofT; } else poof.visible = false;
+      const m = holder.children[0]; if (m && m.userData.tick) m.userData.tick(tt);
+
+      const showStand = TOPICS[curTopic] === 'music';
+      standEl.hidden = !showStand;
+      if (showStand){ v.copy(standTag).project(cam); standEl.style.transform = `translate(${((v.x + 1) / 2 * innerWidth).toFixed(1)}px,${((1 - v.y) / 2 * innerHeight).toFixed(1)}px) translate(-50%,-100%)`; }
+    }
+  };
+}
+
+/* ---------- reading column inside the diorama ---------- */
+const iris = $('#iris'), dioEl = $('#dio'), art = $('#dio-art');
+let lastFocus = null, dioIndex = -1, flatTopic = 0;
+function articleHTML(p){
+  const extra = k => k === 'identity' ? `<p class="note" data-i18n="fig_note"></p>` : k === 'myth' ? `<div class="film paused" id="dio-film"></div>
+      <div class="film-ctl"><button type="button" class="btn btn-primary btn-sm" id="film-play"><span>Play</span></button><button type="button" class="btn btn-ghost btn-sm" id="film-restart"><span data-i18n="restart">Restart</span></button></div>
+      <p class="note" data-i18n="film_note"></p>`
+    : k === 'music' ? `<div class="player" aria-hidden="true"><span class="pbtn"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M4 2l10 6-10 6z" fill="currentColor"/></svg></span><span class="bars"></span><small data-i18n="player"></small></div><p class="note" data-i18n="music_note"></p>`
+    : k === 'sources' ? `<ol class="srclist"><li data-i18n="src_row"></li><li data-i18n="src_row"></li></ol>` : '';
+  return `<header class="art-head" style="--pc:var(--${p.col})">
+    <div class="row"><p class="eyebrow"><span class="sw"></span><span data-i18n="dio_kicker">Diorama</span> · ${p.prov}</p>
+      <button type="button" class="btn btn-primary btn-sm" id="dio-close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span data-i18n="back_map">Back to the map</span></button></div>
+    <h2 id="dio-name">${p.people}</h2>
+    <nav class="tnav" aria-label="Topics">${TOPICS.map((k, n) => `<button type="button" data-goto="${n}" data-i18n="tp_${k}"></button>`).join('')}</nav>
+  </header>
+  ${TOPICS.map((k, n) => `<section class="topic" data-topic="${n}" id="topic-${k}">
+    <p class="t-num">${String(n + 1).padStart(2, '0')} / 07</p><h3 data-i18n="tp_${k}"></h3>
+    <span class="soon" data-i18n="coming">Coming soon</span>
+    <div class="skel" aria-hidden="true"><i></i><i></i><i></i><i></i>${k === 'myth' ? '<i></i><i></i>' : ''}</div>
+    <p class="note" data-i18n="tn_${k}"></p>${extra(k)}
+  </section>`).join('')}`;
+}
+function currentTopic(){ return dio && dio.active ? dio.topic : flatTopic; }
+function updateTopicUI(){
+  if (dioIndex < 0) return;
+  const k = currentTopic();
+  $('#topic-tag-n').textContent = t('now');
+  $('#topic-tag-t').textContent = t('tp_' + TOPICS[k]);
+  $$('.tnav button', art).forEach((b, n) => b.setAttribute('aria-current', String(n === k)));
+}
+function readingTopic(){
+  const secs = $$('.topic', art); if (!secs.length) return 0;
+  const line = art.getBoundingClientRect().top + Math.min(art.clientHeight * 0.38, 260);
+  let cur = 0; secs.forEach((s, n) => { if (s.getBoundingClientRect().top <= line) cur = n; });
+  return cur;
+}
+art.addEventListener('scroll', () => {
+  const k = readingTopic();
+  if (dio && dio.active) dio.setTopic(k);
+  else if (k !== flatTopic){ flatTopic = k; updateTopicUI(); }
+}, { passive:true });
+art.addEventListener('click', e => {
+  const b = e.target.closest('[data-goto]');
+  if (b){ const s = $$('.topic', art)[+b.dataset.goto]; art.scrollTo({ top: s.offsetTop - $('.art-head', art).offsetHeight + 2, behavior: reduceMQ.matches ? 'auto' : 'smooth' }); }
+  if (e.target.closest('#dio-close')) closeDiorama();
+  if (e.target.closest('#film-play')) setFilmPaused(!filmPaused);
+  if (e.target.closest('#film-restart')){ buildFilm($('#dio-film'), PROVS[dioIndex]); setFilmPaused(false); }
+});
+
+function irisTo(from, to, x, y, ms){
+  const a = iris.animate([{ clipPath:`circle(${from} at ${x}px ${y}px)` }, { clipPath:`circle(${to} at ${x}px ${y}px)` }], { duration: ms, easing:'cubic-bezier(.65,0,.25,1)', fill:'forwards' });
+  // never let a stalled animation (background tab, throttled frames) block the diorama
+  return Promise.race([a.finished.catch(() => {}), new Promise(r => setTimeout(r, ms + 250))]);
+}
+function lockScroll(on){ root.style.overflow = on ? 'hidden' : ''; $('#main').inert = on; $('.bar').inert = on; }
+const svgPath = polys => polys.map(poly => poly.map(r => 'M' + r.map(([x, y]) => `${x.toFixed(2)} ${(-y).toFixed(2)}`).join('L') + 'Z').join('')).join('');
+const sheetFill = (col, lvl) => lvl ? `color-mix(in srgb, var(--${col}) ${Math.round(100 - Math.min(lvl * 2, 30))}%, var(--edge))` : `var(--${col})`;
+function provinceSVG(i){
+  const d = DAVAO[i], all = [d.base.map(r => [r]), ...d.layers.map(L => L.polys)];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  d.base.forEach(r => r.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }));
+  return `<svg viewBox="${minX - 0.6} ${-maxY - 0.6} ${maxX - minX + 1.2} ${maxY - minY + 1.2}" aria-hidden="true">${all.map((polys, lvl) =>
+    `<path d="${svgPath(polys)}" transform="translate(0.04,0.08)" style="fill:var(--ink);opacity:.18" fill-rule="evenodd"/><path d="${svgPath(polys)}" style="fill:${sheetFill(d.col, lvl)};stroke:var(--edge);stroke-width:.03" fill-rule="evenodd"/>`).join('')}</svg>`;
+}
+async function openDiorama(i){
+  lastFocus = document.activeElement; dioIndex = i; flatTopic = 0;
+  const p = PROVS[i];
+  art.innerHTML = articleHTML(p); art.scrollTop = 0;
+  buildFilm($('#dio-film'), p); filmPaused = true;
+  applyLang();
+  const fast = reduceMQ.matches;
+  if (mode === '3d' && three){
+    const [sx, sy, tgt] = three.pinScreen(i);
+    if (!fast){ three.dive(tgt); await irisTo('0%', '150%', sx, sy, 650); }
+    if (!dioCache[i]) dioCache[i] = buildDiorama(i);
+    dio = dioCache[i]; dio.reset(); dio.active = true; dio.state.idle = 0;
+    $('#dio-flat').hidden = true; $('#topic-tag').hidden = false; $('.dio-hint').hidden = false;
+  } else {
+    const box = $('#dio-flat'); box.hidden = false; box.innerHTML = provinceSVG(i);
+    $('#topic-tag').hidden = true; $('.dio-hint').hidden = true; $('#dio-tag').hidden = true;
+  }
+  updateTopicUI();
+  dioEl.hidden = false; lockScroll(true);
+  document.body.classList.add('dio-open'); dioEl.classList.toggle('flatmode', mode !== '3d');
+  if (mode === '3d' && !fast) await irisTo('150%', '0%', innerWidth / 2, innerHeight / 2, 600);
+  $('#dio-close').focus();
+}
+async function closeDiorama(){
+  const fast = reduceMQ.matches || mode !== '3d';
+  setFilmPaused(true);
+  if (!fast) await irisTo('0%', '150%', innerWidth / 2, innerHeight / 2, 500);
+  dioEl.hidden = true; lockScroll(false); document.body.classList.remove('dio-open');
+  if (dio) dio.active = false;
+  if (three) three.undive();
+  dioIndex = -1;
+  if (!fast) await irisTo('150%', '0%', innerWidth / 2, innerHeight / 2, 600);
+  if (lastFocus) lastFocus.focus();
+}
+document.addEventListener('click', e => { const d = e.target.closest('[data-dio]'); if (d) openDiorama(+d.dataset.dio); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !dioEl.hidden) closeDiorama(); });
+(function(){
+  let px = 0, py = 0;
+  dioEl.addEventListener('pointerdown', e => { if (!dio || !dio.active || e.target.closest('.dio-art')) return; dio.state.dragging = true; px = e.clientX; py = e.clientY; dioEl.setPointerCapture(e.pointerId); });
+  dioEl.addEventListener('pointermove', e => {
+    if (!dio || !dio.state.dragging) return;
+    dio.state.az -= (e.clientX - px) * 0.008; dio.state.el = Math.min(1.2, Math.max(0.15, dio.state.el + (e.clientY - py) * 0.005)); px = e.clientX; py = e.clientY;
+  });
+  const up = () => { if (dio){ dio.state.dragging = false; dio.state.idle = 0; } };
+  dioEl.addEventListener('pointerup', up); dioEl.addEventListener('pointercancel', up);
+})();
+
+/* ======================= cut-paper story film ======================= */
+function hills(w, h, base, amp, seed, periods, bump){
+  let d = `M0 ${h} `;
+  for (let x = 0; x <= w; x += 8){
+    const q = x / w * TAU;
+    let y = base - amp * (0.5 * Math.sin(q * periods[0] + seed) + 0.3 * Math.sin(q * periods[1] + seed * 2) + 0.2 * Math.sin(q * periods[2] + seed * 3));
+    if (bump){ const dx = (x - bump.x) / bump.w; y -= bump.h * Math.exp(-dx * dx); }
+    d += `L${x} ${y.toFixed(1)} `;
+  }
+  return d + `L${w} ${h} Z`;
+}
+const layerSVG = (cls, path) => { const svg = `<svg viewBox="0 0 1600 300" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>`; return `<div class="fl ${cls}">${svg}${svg}</div>`; };
+let capTimer = null, capIdx = 0, filmPaused = true;
+function buildFilm(el, p){
+  if (!el) return;
+  const n = PROVS.indexOf(p), coastal = p.id === 'oriental' || p.id === 'occidental';
+  el.style.setProperty('--fc', `var(--${p.col})`);
+  let html = '<div class="orb"></div>';
+  html += layerSVG('far' + (p.id === 'sur' ? ' static' : ''), hills(1600, 300, 150, 70, 1.3 + n, [2, 5, 9], p.id === 'sur' ? { x:520, w:170, h:120 } : null));
+  html += layerSVG('mid', hills(1600, 300, 130, p.id === 'norte' ? 30 : 60, 2.1 + n, [3, 7, 11]));
+  if (p.id === 'oro') html += '<div class="fall"></div>';
+  if (coastal) html += '<div class="seab"></div>'; else html += layerSVG('near', hills(1600, 300, 120, 40, 4.2, [4, 9, 15]));
+  if (p.id === 'norte') html += '<div class="river"></div>';
+  html += '<div class="birds"><span style="--y:20%;--d:22s;--dl:-3s"></span><span style="--y:26%;--d:26s;--dl:-9s"></span><span style="--y:16%;--d:30s;--dl:-15s"></span></div>';
+  html += `<p class="cap" id="film-cap">${t('cap1')}</p>`;
+  el.innerHTML = html; capIdx = 0;
+}
+function updateFilmBtn(){ const b = $('#film-play span'); if (b) b.textContent = t(filmPaused ? 'play' : 'pause'); }
+function setFilmPaused(v){
+  filmPaused = v; const f = $('#dio-film'); if (f) f.classList.toggle('paused', v); updateFilmBtn();
+  clearInterval(capTimer);
+  if (!v) capTimer = setInterval(() => { capIdx = (capIdx + 1) % 3; const c = $('#film-cap'); if (c) c.textContent = t('cap' + (capIdx + 1)); }, 5300);
+}
+
+/* ======================= flat fallback map ======================= */
+function buildFlat(){
+  const host = $('#flat');
+  const sheet = (polys, col, lvl) => `<path d="${svgPath(polys)}" transform="translate(0.06,0.12)" fill-rule="evenodd" style="fill:var(--ink);opacity:.16"/><path d="${svgPath(polys)}" fill-rule="evenodd" style="fill:${sheetFill(col, lvl)};stroke:var(--edge);stroke-width:.05"/>`;
+  let svg = `<svg id="flatsvg" preserveAspectRatio="xMidYMid slice" viewBox="-80 -120 160 140">
+  <rect x="-2000" y="-2000" width="4000" height="4000" style="fill:var(--sea)"/>
+  <g class="country">${sheet(countryRings.map(r => [r]), 'rest', 0)}${countryLayers.map(L => sheet(L.polys, 'rest', L.lvl)).join('')}</g>`;
+  DAVAO.forEach((d, i) => {
+    svg += `<g class="piece">${sheet(d.base.map(r => [r]), d.col, 0)}${d.layers.map(L => sheet(L.polys, d.col, L.lvl)).join('')}`;
+    if (i < PROVS.length){
+      const [x, y] = P(PROVS[i].pin);
+      svg += `<g class="fpin" transform="translate(${x},${-y})"><circle r="0.3" style="fill:var(--ink)"/><circle r="0.12" style="fill:var(--${d.col})"/>
+        <text class="ft-people" x="0.5" y="-0.45" style="font-family:var(--f-display);font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:calc(var(--fs) * .3)">${PROVS[i].people}</text></g>`;
+    }
+    const [cx, cy] = d.cen;
+    svg += `<text class="ft-prov" x="${cx}" y="${-cy + 0.9}" text-anchor="middle" ${i >= PROVS.length ? 'data-key="l_city"' : ''} style="font-family:var(--f-body);font-weight:700;letter-spacing:.1em;text-transform:uppercase;fill:var(--ink-2);paint-order:stroke;stroke:var(--card);stroke-width:calc(var(--fs) * .25)">${i >= PROVS.length ? t('l_city') : d.prov}</text></g>`;
+  });
+  const ctext = (key, ll) => { const [x, y] = P(ll); return `<text class="ft-country" data-key="${key}" x="${x}" y="${-y}" text-anchor="middle" style="font-family:var(--f-display);letter-spacing:.4em;text-transform:uppercase;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:calc(var(--fs) * .3)">${t(key)}</text>`; };
+  svg += `<g class="ft-c">${ctext('l_luzon', [121.2, 15.4])}${ctext('l_visayas', [123.4, 11.4])}${ctext('l_mindanao', [124.0, 8.3])}</g></svg>`;
+  host.innerHTML = svg;
+  const el = $('#flatsvg'), pieceEls = $$('.piece', el);
+  let vb = [-80, -120, 160, 140], tw = null, lastIdx = -1;
+  function css(){
+    el.style.setProperty('--fs', (vb[2] / 48).toFixed(3) + 'px');
+    $$('.ft-people', el).forEach(n => { n.style.fontSize = (vb[2] / 34) + 'px'; });
+    $$('.ft-prov', el).forEach(n => { n.style.fontSize = (vb[2] / 70) + 'px'; });
+    $$('.ft-country', el).forEach(n => { n.style.fontSize = (vb[2] / 40) + 'px'; });
+  }
+  function apply(w){
+    pieceEls.forEach((pe, i) => {
+      const d = DAVAO[i];
+      pe.setAttribute('transform', `translate(${(d.dir[0] * EX_D * w.ex).toFixed(2)},${(-d.dir[1] * EX_D * w.ex).toFixed(2)})`);
+      pe.style.opacity = 1 - w.dim[i] * 0.5;
+      const pin = $('.fpin', pe); if (pin) pin.style.opacity = w.pn > 0.3 ? 1 : 0;
+      $('.ft-prov', pe).style.opacity = w.lp > 0.3 ? 1 : 0;
+    });
+    $('.country', el).style.opacity = 1 - w.fo * 0.45;
+    $('.ft-c', el).style.opacity = w.lc > 0.5 ? 1 : 0;
+  }
+  function sync(instant){
+    const idx = currentSectionIndex();
+    if (idx === lastIdx && !instant) return; lastIdx = idx;
+    const w = sections[idx].w, aspect = innerWidth / innerHeight, wide = innerWidth > 760 && aspect >= 0.9;
+    const width = w.d * (aspect < 1 ? 0.75 : 1.05), height = width / Math.max(aspect, 0.5);
+    // same framing rule as 3D: the province sits in the half the card leaves open
+    const cx = w.t[0] - (wide ? w.side * 0.2 * width : 0), cy = w.t[2] + (!wide ? Math.abs(w.side) * 0.2 * height : 0);
+    const target = [cx - width / 2, cy - height / 2, width, height];
+    apply(w); updateRail(); cancelAnimationFrame(tw);
+    if (instant || reduceMQ.matches){ vb = target; el.setAttribute('viewBox', vb.join(' ')); css(); return; }
+    const from = vb.slice(), t0 = performance.now(), dur = 900;
+    const step = now => {
+      let k = Math.min(1, (now - t0) / dur); k = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      vb = from.map((v, j) => v + (target[j] - v) * k); el.setAttribute('viewBox', vb.join(' ')); css();
+      if (k < 1) tw = requestAnimationFrame(step);
+    };
+    tw = requestAnimationFrame(step);
+  }
+  addEventListener('scroll', () => { if (mode === 'flat') sync(false); }, { passive:true });
+  addEventListener('resize', () => { if (mode === 'flat') sync(true); });
+  return { sync };
+}
+
+/* ======================= boot ======================= */
+applyLang(); refreshSwatchCodes(); measure();
+addEventListener('resize', measure);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+addEventListener('load', measure);
+addEventListener('scroll', () => { if (mode === 'flat') updateRail(); }, { passive:true });
+const saved = store.get('emag-mode');
+if (!glOK) setMode('flat', 't_gl');
+else if (saved === '3d' || saved === 'flat') setMode(saved);
+else if (reduceMQ.matches) setMode('flat', 't_rm');
+else setMode('3d');
+updateRail();
+})();
+</script>
