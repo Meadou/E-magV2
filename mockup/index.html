@@ -488,16 +488,33 @@ body.rd-open .map-cap{visibility:hidden}
 @keyframes sbw2{to{transform:translateX(26px)}}
 @keyframes sbbob{to{transform:translateY(-1.1px)}}
 @keyframes sbflap{from{transform:scaleY(1)}to{transform:scaleY(-.45)}}
-.sb-page{margin-top:10px;padding:14px 16px 10px;background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--pc,var(--leaf));border-radius:2px}
+.film-stage{position:relative;isolation:isolate}
+.sb-big{position:absolute;inset:0;z-index:2;display:grid;place-items:center;width:100%;padding:0;border:0;border-radius:2px;background:none;cursor:pointer;color:#fff}
+.sb-ring{display:grid;place-items:center;width:clamp(54px,10vw,72px);aspect-ratio:1;border-radius:50%;background:rgba(18,20,26,.68);box-shadow:0 4px 18px rgba(0,0,0,.28);transition:opacity .25s,transform .25s,background-color .2s}
+.sb-ring .i{display:none;width:44%;height:44%}
+.sb-big[data-state="play"] .i-play,.sb-big[data-state="pause"] .i-pause,.sb-big[data-state="replay"] .i-replay{display:block}
+.sb-big[data-state="play"] .i-play{transform:translateX(6%)}
+.sb-big:hover .sb-ring{transform:scale(1.07);background:rgba(18,20,26,.82)}
+.sb-big[data-state="pause"] .sb-ring{opacity:0;transform:scale(.9)}
+.sb-big[data-state="pause"]:hover .sb-ring,.sb-big[data-state="pause"]:focus-visible .sb-ring{opacity:1;transform:none}
+.sb-big:focus-visible{outline:3px solid var(--pc,var(--leaf));outline-offset:2px}
+.sb-side{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:40px;height:40px;margin-top:-20px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer;transition:background-color .2s,transform .2s}
+.sb-side svg{width:16px;height:16px}
+.sb-side:hover{background:var(--card);transform:scale(1.06)}
+.sb-side:focus-visible{outline:3px solid var(--pc,var(--leaf));outline-offset:2px}
+.sb-side:disabled{visibility:hidden}
+#sb-prev{left:10px}#sb-next{right:10px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sb-page{margin-top:6px;padding:14px 18px;background:var(--card);border:1px solid var(--rule);border-radius:2px}
 .sb-text{font:500 clamp(1.02rem,2.2vw,1.2rem)/1.5 var(--f-display);letter-spacing:-.005em;color:var(--ink);min-height:4.5em;margin:0;text-wrap:pretty}
-.sb-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sb-nav{position:relative;display:flex;justify-content:center;align-items:center;min-height:30px;margin-top:6px}
 .sb-arrow{padding-inline:10px}
 .sb-arrow svg{width:14px;height:14px}
-.sb-dots{display:flex;margin-left:auto}
+.sb-dots{display:flex;justify-content:center}
 .sb-dot{width:22px;height:22px;display:grid;place-items:center;border:0;background:none;padding:0;cursor:pointer}
 .sb-dot::before{content:"";width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink-2);box-sizing:border-box}
 .sb-dot[aria-current="true"]::before{background:var(--ink);border-color:var(--ink)}
-.sb-count{font:600 11px/1 var(--f-body);letter-spacing:.1em;color:var(--ink-2);min-width:3.2em;text-align:right}
+.sb-count{position:absolute;right:2px;top:50%;transform:translateY(-50%);font:600 11px/1 var(--f-body);letter-spacing:.1em;color:var(--ink-2)}
 @media (prefers-reduced-motion: reduce){ .sb *{transition:none !important;animation:none !important} }
 
 @media (max-width:640px){
@@ -589,7 +606,7 @@ Krizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonar
   <section class="sec" id="conclusion" data-world="conclusion" data-side="right" data-ch="concl">
     <article class="panel">
       <p class="eyebrow"><span class="num">VI</span><span data-i18n="ch_concl">Conclusion</span></p>
-      <h2 class="h-sec" data-i18n="concl_h">Back to the whole archipelago</h2>
+      <h2 class="h-sec" data-i18n="concl_h">One gulf, five homelands</h2>
       <p data-i18n="concl_p" style="margin-top:14px"></p>
     </article>
   </section>
@@ -663,7 +680,7 @@ const T = {
     intro_h:'Below the clouds, the Davao Gulf', intro_p:"Region XI, the Davao Region, wraps around the Davao Gulf in southeastern Mindanao. This magazine visits five of the Indigenous peoples who live there: the Ata Manobo, Mansaka, Mandaya, Tagakaulo and Bagobo-Tagabawa. Two province names are recent: Davao Occidental was created from Davao del Sur in 2013 [@ra10360], and Compostela Valley was renamed Davao de Oro in 2019 [@ra11297], so older sources use the earlier names.", region_k:'Region XI', region_h:'Five provinces around one gulf', region_p:'Davao del Norte, Davao de Oro, Davao Oriental, Davao Occidental and Davao del Sur ring the Davao Gulf. This magazine pairs each province with one of the Indigenous peoples who live there.',
     region_n:"The colours only tell the provinces apart. None are taken from any people’s designs.",
     province:'Province', coming:'Coming soon', inside:'Inside the diorama', enter_dio:'Enter diorama', back_map:'Back to the map',
-    compare_h:'Five peoples, side by side', compare_p:"The same five questions, answered from the sources for each people. Language codes are ISO 639-3, from Glottolog [@glotto]. Each people’s article lists the sources behind its column.", row_name:"Name & meaning", row_home:"Homeland", row_lang:"Language", row_dress:"Dress & weaving", row_values:"Beliefs & values", row_music:"Music & dance", sig_h:"What the land, the cloth and the elders carry", sig_p:"Across the five peoples, the sources tie identity to place. The names mean the heights, the mountain clearings, the upstream, the head of the river and the south. Weaving carries meaning too: Mandaya dagmay is read as an expression of belief [@wagas], and Bagobo Tagabawa abaca-ikat weaving is honoured as national heritage [@proc1076]. Elders hold it together, passing on custom and respect.", concl_h:'Back to the whole archipelago', concl_p:"Five peoples, one gulf. Each name on this map points to a homeland and a history that the people themselves keep. This magazine records only what published sources state; each people’s story is retold here, with the music and dance the sources record. Older sources such as Cole’s 1913 survey [@cole] were written by outsiders and use dated language, so we use them for their records, not their judgments.", refs_h:'References & protocols', refs_sub:"References · IEEE", respect_h:'Respect & Protocols', r1:'Peoples are named as they name themselves.', r2:"Every article lists its sources; key facts carry a numbered citation.", r3:'Nothing is invented: no villages, people or patterns.', r4:'Sacred or restricted material stays out: rituals may be named, but they are not described.',
+    compare_h:'Five peoples, side by side', compare_p:"The same five questions, answered from the sources for each people. Language codes are ISO 639-3, from Glottolog [@glotto]. Each people’s article lists the sources behind its column.", row_name:"Name & meaning", row_home:"Homeland", row_lang:"Language", row_dress:"Dress & weaving", row_values:"Beliefs & values", row_music:"Music & dance", sig_h:"What the land, the cloth and the elders carry", sig_p:"Across the five peoples, the sources tie identity to place. The names mean the heights, the mountain clearings, the upstream, the head of the river and the south. Weaving carries meaning too: Mandaya dagmay is read as an expression of belief [@wagas], and Bagobo Tagabawa abaca-ikat weaving is honoured as national heritage [@proc1076]. Elders hold it together, passing on custom and respect.", concl_h:'One gulf, five homelands', concl_p:"Five peoples, one gulf. Each name on this map points to a homeland and a history that the people themselves keep. This magazine records only what published sources state; each people’s story is retold here, with the music and dance the sources record. Older sources such as Cole’s 1913 survey [@cole] were written by outsiders and use dated language, so we use them for their records, not their judgments.", refs_h:'References & protocols', refs_sub:"References · IEEE", respect_h:'Respect & Protocols', r1:'Peoples are named as they name themselves.', r2:"Every article lists its sources; key facts carry a numbered citation.", r3:'Nothing is invented: no villages, people or patterns.', r4:'Sacred or restricted material stays out: rituals may be named, but they are not described.',
     dio_kicker:'Diorama', dio_drag:'Drag to turn the diorama',
     tp_identity:'Identity', tp_myth:'Myth & story', tp_meaning:'Meaning', tp_music:'Music', tp_performance:'Performance', tp_significance:'Significance', tp_sources:'Sources',
     rd_soon:"Myth, music and performance will be added once they can be cited with the same care.", rd_note:"The 3D figures in the diorama are stylised and illustrative. Photographs are credited in their captions and listed under References.", src_note:"The full article lists every source for this people, numbered as in the References.", photos_h:"Photographs", rd_kicker:"Feature", next_art:"Next people", back:"Back", read_full:"Read the full article", read_art:"Read the article", read_more:"Read more", tn_myth:'One specifically attributed myth or traditional narrative, with its source named.',
@@ -676,7 +693,7 @@ const T = {
     cap_fig:'Artistic 3D visualization inspired by traditional {p} attire. Patterns are illustrative, not exact reproductions.',
     cap_sym:'Symbolic 3D model for this topic. It is not a cultural object.',
     fig_note:"The 3D figure is a stylised, faceless model made from reference photographs and illustrations. Its colours and patterns are illustrative, not exact reproductions; the full article says what the sources record about dress.", play:'Play', pause:'Pause', restart:'Restart', src_says:'What the sources say', our_read:'Our reading', inst_h:'Instruments', snd_play:'Play a sound like the {i}', no_inst:'The sources used here do not name specific instruments.', rd_soon3:'The story and its meaning will be added once they can be cited with the same care.',
-    music_note:'Each ▶ plays a short sound made in your browser to suggest the kind of instrument. It is not a recording and not a traditional piece, and nothing plays until you tap.',
+    music_note:'Each plays a short sound to suggest the kind of instrument. It is not a recording and not a traditional piece.',
     cap1:'The hills and the sea of the province.', cap2:'A story will be told here once it can be cited.', cap3:'Until then, only the land is shown.',
     mode3d:'3D map', modeflat:'Flat map',
     t_rm:'Showing the flat map because reduced motion is on. Switch to 3D at the top.', t_gl:"Showing the flat map because this device can't draw 3D.",
@@ -691,7 +708,7 @@ const T = {
     intro_h:'Sa ilalim ng mga ulap, ang Golpo ng Davao', region_k:'Rehiyon XI', region_h:'Limang lalawigan sa paligid ng iisang golpo', region_p:'Nakapalibot sa Golpo ng Davao ang Davao del Norte, Davao de Oro, Davao Oriental, Davao Occidental at Davao del Sur. Ipinapares ng magasing ito ang bawat lalawigan sa isa sa mga katutubong pamayanang naninirahan doon.',
     region_n:'Pantukoy lamang sa mga lalawigan ang mga kulay. Walang kinuha sa disenyo ng alinmang pamayanan.', intro_p:"Ang Rehiyon XI, ang Rehiyon ng Davao, ay nakapalibot sa Golpo ng Davao sa timog-silangang Mindanao. Dinadalaw ng magasing ito ang lima sa mga katutubong pamayanang naninirahan doon: ang Ata Manobo, Mansaka, Mandaya, Tagakaulo at Bagobo-Tagabawa. Bago pa lamang ang pangalan ng dalawang lalawigan: nilikha ang Davao Occidental mula sa Davao del Sur noong 2013 [@ra10360], at pinalitan ang pangalan ng Compostela Valley bilang Davao de Oro noong 2019 [@ra11297], kaya ang mga lumang pangalan ang gamit ng mas lumang pinagkunan.", compare_p:"Iisang limang tanong, sinagot mula sa mga pinagkunan para sa bawat pamayanan. ISO 639-3 ang mga code ng wika, mula sa Glottolog [@glotto]. Nakalista sa artikulo ng bawat pamayanan ang mga pinagkunan sa likod ng hanay nito.", sig_p:"Sa limang pamayanan, iniuugnay ng mga pinagkunan ang pagkakakilanlan sa lugar. Ang mga pangalan ay nangangahulugang kabundukan, mga kaingin sa bundok, itaas ng ilog, ulo ng ilog at timog. May kahulugan din ang paghahabi: binabasa ang dagmay ng Mandaya bilang pagpapahayag ng paniniwala [@wagas], at pinararangalan bilang pambansang pamana ang abaca-ikat ng Bagobo Tagabawa [@proc1076]. Ang matatanda ang nagbubuklod dito, at ipinapasa nila ang kaugalian at paggalang.", concl_p:"Limang pamayanan, iisang golpo. Ang bawat pangalan sa mapang ito ay tumuturo sa isang lupang tinubuan at kasaysayang iniingatan ng mga tao mismo. Itinatala lamang ng magasing ito ang sinasabi ng mga nailathalang pinagkunan; muling isinalaysay dito ang kuwento ng bawat pamayanan, kasama ang musika at sayaw na itinala ng mga pinagkunan. Isinulat ng mga dayuhan ang mas lumang pinagkunan gaya ng surbey ni Cole noong 1913 [@cole] at luma na ang kanilang pananalita, kaya ginagamit namin ang mga ito para sa kanilang mga tala, hindi sa kanilang mga paghuhusga.",
     province:'Lalawigan', coming:'Malapit na', inside:'Sa loob ng diorama', enter_dio:'Pumasok sa diorama', back_map:'Bumalik sa mapa',
-    compare_h:'Limang pamayanan, magkakatabi', row_name:"Pangalan at kahulugan", row_home:"Lupang tinitirhan", row_lang:"Wika", row_dress:"Kasuotan at habi", row_values:"Paniniwala at pagpapahalaga", row_music:"Musika at sayaw", sig_h:"Ang dala ng lupa, ng habi at ng matatanda", concl_h:'Pabalik sa buong kapuluan', refs_h:'Mga sanggunian at protokol', refs_sub:"Mga Sanggunian · IEEE", respect_h:'Paggalang at mga Protokol', r1:'Tinatawag ang mga pamayanan sa pangalang sila mismo ang gumagamit.', r2:"May listahan ng sanggunian ang bawat artikulo; may bilang na sanggunian ang mahahalagang datos.", r3:'Walang inimbento: walang gawa-gawang nayon, tao o disenyo.', r4:'Hindi isinasama ang sagrado o ipinagbabawal na kaalaman: maaaring banggitin ang mga ritwal, ngunit hindi inilalarawan.',
+    compare_h:'Limang pamayanan, magkakatabi', row_name:"Pangalan at kahulugan", row_home:"Lupang tinitirhan", row_lang:"Wika", row_dress:"Kasuotan at habi", row_values:"Paniniwala at pagpapahalaga", row_music:"Musika at sayaw", sig_h:"Ang dala ng lupa, ng habi at ng matatanda", concl_h:'Iisang golpo, limang lupang tinubuan', refs_h:'Mga sanggunian at protokol', refs_sub:"Mga Sanggunian · IEEE", respect_h:'Paggalang at mga Protokol', r1:'Tinatawag ang mga pamayanan sa pangalang sila mismo ang gumagamit.', r2:"May listahan ng sanggunian ang bawat artikulo; may bilang na sanggunian ang mahahalagang datos.", r3:'Walang inimbento: walang gawa-gawang nayon, tao o disenyo.', r4:'Hindi isinasama ang sagrado o ipinagbabawal na kaalaman: maaaring banggitin ang mga ritwal, ngunit hindi inilalarawan.',
     dio_kicker:'Diorama', dio_drag:'I-drag para paikutin ang diorama',
     tp_identity:'Pagkakakilanlan', tp_myth:'Mito at kuwento', tp_meaning:'Kahulugan', tp_music:'Musika', tp_performance:'Pagtatanghal', tp_significance:'Kahalagahan', tp_sources:'Mga Pinagkunan',
     rd_soon:"Idadagdag ang mito, musika at pagtatanghal kapag may maayos na pinagkunan na.", rd_note:"Inistilo at paglalarawan lamang ang mga 3D na pigura sa diorama. May kredito ang bawat larawan sa caption nito at nakalista sa Mga Sanggunian.", src_note:"Nasa buong artikulo ang lahat ng pinagkunan para sa pamayanang ito, may bilang na gaya sa Mga Sanggunian.", photos_h:"Mga larawan", rd_kicker:"Tampok", next_art:"Susunod na pamayanan", back:"Bumalik", read_full:"Basahin ang buong artikulo", read_art:"Basahin ang artikulo", read_more:"Basahin pa", tn_myth:'Isang mito o tradisyonal na salaysay na may tiyak na pinagkunan.',
@@ -1954,11 +1971,18 @@ const instHTML = list => list && list.length
   : `<p class="note" data-i18n="no_inst"></p>`;
 function articleHTML(p){
   const my = C[p.id].myth, mu = C[p.id].music;
-  const arrow = (id, d) => `<button type="button" class="btn btn-ghost btn-sm sb-arrow" id="${id}" data-i18n-aria="pg_${id === 'sb-prev' ? 'prev' : 'next'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>`;
-  const book = () => `<div class="film-wrap"><div class="film paused" id="dio-film"></div>
-      <div class="sb-page" style="--pc:var(--${p.col})"><p class="sb-text" id="film-cap" aria-live="polite"></p>
-        <div class="sb-nav">${arrow('sb-prev', 'M10 3 5 8l5 5')}<button type="button" class="btn btn-primary btn-sm" id="film-play"><span>Play</span></button>${arrow('sb-next', 'M6 3l5 5-5 5')}
-          <span class="sb-dots">${my.beats.map((_, n) => `<button type="button" class="sb-dot" data-sb-go="${n}" aria-label="${n + 1} / ${my.beats.length}"></button>`).join('')}</span><span class="sb-count" id="sb-count"></span></div></div>
+  const arrow = (id, d) => `<button type="button" class="sb-side" id="${id}" data-i18n-aria="pg_${id === 'sb-prev' ? 'prev' : 'next'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  // video-style player: the whole picture is the play/pause button, with the round icon in the middle
+  const book = () => `<div class="film-wrap" style="--pc:var(--${p.col})">
+      <div class="film-stage"><div class="film paused" id="dio-film"></div>
+        <button type="button" class="sb-big" id="film-play" data-state="play"><span class="sb-ring" aria-hidden="true">
+          <svg class="i i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5Z" fill="currentColor"/></svg>
+          <svg class="i i-pause" viewBox="0 0 24 24"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" fill="currentColor"/></svg>
+          <svg class="i i-replay" viewBox="0 0 24 24"><path d="M5.5 12a6.5 6.5 0 1 0 2-4.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M4.5 4.2v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span><span class="vh">Play</span></button>
+        ${arrow('sb-prev', 'M10 3 5 8l5 5')}${arrow('sb-next', 'M6 3l5 5-5 5')}</div>
+      <div class="sb-nav"><span class="sb-dots">${my.beats.map((_, n) => `<button type="button" class="sb-dot" data-sb-go="${n}" aria-label="${n + 1} / ${my.beats.length}"></button>`).join('')}</span><span class="sb-count" id="sb-count"></span></div>
+      <div class="sb-page"><p class="sb-text" id="film-cap" aria-live="polite"></p></div>
       <p class="note" data-i18n="film_note2"></p></div>`;
   const extra = k => k === 'identity' ? `<p class="note" data-i18n="fig_note"></p>` : k === 'myth' && my && my.beats ? book() : k === 'myth' ? `<div class="film-wrap"><div class="film paused" id="dio-film"></div>
       <div class="film-ctl"><button type="button" class="btn btn-primary btn-sm" id="film-play"><span>Play</span></button><button type="button" class="btn btn-ghost btn-sm" id="film-restart"><span data-i18n="restart">Restart</span></button></div>
@@ -2288,9 +2312,9 @@ function nextBeat(){
 }
 function goBeat(n){ capIdx = Math.max(0, Math.min(beatCount() - 1, n)); filmCap(); if (!filmPaused) nextBeat(); }
 function updateFilmBtn(){
-  const b = $('#film-play span'); if (!b) return;
-  const end = storyOf() && capIdx === beatCount() - 1;
-  b.textContent = t(!filmPaused ? 'pause' : end ? 'replay' : 'play');
+  const btn = $('#film-play'), b = $('#film-play span:last-child'); if (!btn || !b) return;
+  const end = storyOf() && capIdx === beatCount() - 1, st = !filmPaused ? 'pause' : end ? 'replay' : 'play';
+  b.textContent = t(st); btn.dataset.state = st;
 }
 function setFilmPaused(v){
   filmPaused = v; const f = $('#dio-film'); if (f) f.classList.toggle('paused', v);
