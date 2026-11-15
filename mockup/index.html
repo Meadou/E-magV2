@@ -155,6 +155,19 @@ table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:var(--st
 .cmp thead th i{display:block;height:4px;margin:-12px -12px 10px;background:var(--pc)}
 .cmp tbody th{font-weight:700;width:18%}
 .cmp td{line-height:1.5;color:var(--ink-2)}
+/* phone: one question at a time, the five answers stacked */
+.cmp-m{display:none;margin-top:18px}
+.cmp-q{display:flex;flex-wrap:wrap;gap:6px}
+.cmp-q button{all:unset;cursor:pointer;flex:none;white-space:nowrap;font:600 12px/1 var(--f-body);padding:9px 12px;border-radius:999px;color:var(--ink-2);border:1px solid var(--rule);background:var(--card)}
+.cmp-q button[aria-selected="true"]{color:var(--ink);border-color:var(--ink);background:var(--paper)}
+.cmp-q button:focus-visible{outline:3px solid var(--focus)}
+.cmp-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.cmp-item{padding:12px 14px;background:var(--card);border:1px solid var(--rule);border-radius:2px}
+.cmp-who{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin:0 0 4px;font:600 15px/1.2 var(--f-display);letter-spacing:-.01em;color:var(--ink)}
+.cmp-who i{width:10px;height:10px;flex:none;align-self:center;background:var(--pc);clip-path:polygon(0 18%,100% 0,86% 100%,8% 86%)}
+.cmp-who span{font:500 10px/1.2 var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.cmp-a{margin:0;font-size:var(--step--1);line-height:1.55;color:var(--ink-2)}
+@media (max-width:640px){ .grid-wrap{display:none} .cmp-m{display:block} }
 
 /* refs / respect */
 .two{display:grid;grid-template-columns:1.3fr 1fr;gap:clamp(20px,4vw,48px);margin-top:20px}
@@ -171,6 +184,17 @@ table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:var(--st
 /* badge & toast */
 .toast{position:fixed;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:min(22rem,calc(100% - 32px));
   background:var(--card);border:1px solid var(--rule);padding:12px 14px;font-size:var(--step--1);box-shadow:0 18px 30px -18px var(--shadow)}
+
+/* back to top: appears near the end of the page */
+.totop{all:unset;box-sizing:border-box;position:fixed;z-index:6;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 12px;cursor:pointer;border-radius:999px;
+  font:600 12px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--card);border:1px solid var(--rule);
+  box-shadow:0 14px 26px -14px var(--shadow);opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .25s,transform .25s,visibility 0s .25s}
+.totop.show{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .25s}
+.totop svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.totop:hover{border-color:var(--ink)}
+.totop:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ .totop,.totop.show{transform:none;transition:none} }
 
 /* iris */
 .iris{position:fixed;inset:0;z-index:20;background:var(--paper);clip-path:circle(0% at 50% 50%);pointer-events:none}
@@ -606,6 +630,7 @@ Krizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonar
       <h2 class="h-sec" data-i18n="compare_h">Five peoples, side by side</h2>
       <p class="note" style="max-width:62ch" data-i18n="compare_p"></p>
       <div class="grid-wrap" tabindex="0" role="region" aria-label="Comparison grid"><table class="cmp" id="cmp"></table></div>
+      <div class="cmp-m" id="cmp-m"></div>
     </article>
   </section>
 
@@ -652,6 +677,7 @@ Krizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonar
 </main>
 
 <p class="cap3d map-cap" id="map-cap" role="note" data-i18n="cap_map"></p>
+<button class="totop" id="totop" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span data-i18n="to_top">Back to top</span></button>
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="iris" id="iris" aria-hidden="true"></div>
 
@@ -689,7 +715,7 @@ const T = {
   en: {
     kicker:'An e-magazine · Five peoples · Five provinces', title:'The Indigenous\nPeoples of\nRegion XI',
     subtitle:'Ata Manobo, Mansaka, Mandaya, Tagakaulo and Bagobo-Tagabawa, each in their own name.',
-    explore:'Explore', members:'Prepared by\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Scroll to fly in',
+    explore:'Explore', members:'Prepared by\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Scroll to fly in', to_top:'Back to top',
     ch_cover:'Cover', ch_intro:'Introduction', ch_peoples:'Peoples', ch_compare:'Comparison', ch_sig:'Cultural significance', ch_concl:'Conclusion', ch_refs:'References',
     intro_h:'Below the clouds, the Davao Gulf', intro_p:"Region XI, the Davao Region, wraps around the Davao Gulf in southeastern Mindanao. This magazine visits five of the Indigenous peoples who live there: the Ata Manobo, Mansaka, Mandaya, Tagakaulo and Bagobo-Tagabawa. Two province names are recent: Davao Occidental was created from Davao del Sur in 2013 [@ra10360], and Compostela Valley was renamed Davao de Oro in 2019 [@ra11297], so older sources use the earlier names.", region_k:'Region XI', region_h:'Five provinces around one gulf', region_p:'Davao del Norte, Davao de Oro, Davao Oriental, Davao Occidental and Davao del Sur ring the Davao Gulf. This magazine pairs each province with one of the Indigenous peoples who live there.',
     region_n:"The colours only tell the provinces apart. None are taken from any people’s designs.",
@@ -717,7 +743,7 @@ const T = {
   fil: {
     kicker:'Isang e-magasin · Limang katutubong pamayanan · Limang lalawigan', title:'Ang mga Katutubong\nPamayanan ng\nRehiyon XI',
     subtitle:'Ata Manobo, Mansaka, Mandaya, Tagakaulo at Bagobo-Tagabawa, sa sarili nilang pangalan.',
-    explore:'Galugarin', members:'Inihanda nina\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Mag-scroll para lumipad papasok',
+    explore:'Galugarin', members:'Inihanda nina\nKrizia Faye Amon · Marjhun Kyle Pamilar · Junrey Ryan Aurelio · Godwin Leonard · Vincent Anonuevo · Joshua Algene Bontuyan', scroll:'Mag-scroll para lumipad papasok', to_top:'Bumalik sa itaas',
     ch_cover:'Pabalat', ch_intro:'Panimula', ch_peoples:'Mga Pamayanan', ch_compare:'Paghahambing', ch_sig:'Kahalagahang Pangkultura', ch_concl:'Konklusyon', ch_refs:'Mga Sanggunian',
     intro_h:'Sa ilalim ng mga ulap, ang Golpo ng Davao', region_k:'Rehiyon XI', region_h:'Limang lalawigan sa paligid ng iisang golpo', region_p:'Nakapalibot sa Golpo ng Davao ang Davao del Norte, Davao de Oro, Davao Oriental, Davao Occidental at Davao del Sur. Ipinapares ng magasing ito ang bawat lalawigan sa isa sa mga katutubong pamayanang naninirahan doon.',
     region_n:'Pantukoy lamang sa mga lalawigan ang mga kulay. Walang kinuha sa disenyo ng alinmang pamayanan.', intro_p:"Ang Rehiyon XI, ang Rehiyon ng Davao, ay nakapalibot sa Golpo ng Davao sa timog-silangang Mindanao. Dinadalaw ng magasing ito ang lima sa mga katutubong pamayanang naninirahan doon: ang Ata Manobo, Mansaka, Mandaya, Tagakaulo at Bagobo-Tagabawa. Bago pa lamang ang pangalan ng dalawang lalawigan: nilikha ang Davao Occidental mula sa Davao del Sur noong 2013 [@ra10360], at pinalitan ang pangalan ng Compostela Valley bilang Davao de Oro noong 2019 [@ra11297], kaya ang mga lumang pangalan ang gamit ng mas lumang pinagkunan.", compare_p:"Iisang limang tanong, sinagot mula sa mga pinagkunan para sa bawat pamayanan. ISO 639-3 ang mga code ng wika, mula sa Glottolog [@glotto]. Nakalista sa artikulo ng bawat pamayanan ang mga pinagkunan sa likod ng hanay nito.", sig_p:"Sa limang pamayanan, iniuugnay ng mga pinagkunan ang pagkakakilanlan sa lugar. Ang mga pangalan ay nangangahulugang kabundukan, mga kaingin sa bundok, itaas ng ilog, ulo ng ilog at timog. May kahulugan din ang paghahabi: binabasa ang dagmay ng Mandaya bilang pagpapahayag ng paniniwala [@wagas], at pinararangalan bilang pambansang pamana ang abaca-ikat ng Bagobo Tagabawa [@proc1076]. Ang matatanda ang nagbubuklod dito, at ipinapasa nila ang kaugalian at paggalang.", concl_p:"Limang pamayanan, iisang golpo. Ang bawat pangalan sa mapang ito ay tumuturo sa isang lupang tinubuan at kasaysayang iniingatan ng mga tao mismo. Itinatala lamang ng magasing ito ang sinasabi ng mga nailathalang pinagkunan; muling isinalaysay dito ang kuwento ng bawat pamayanan, kasama ang musika at sayaw na itinala ng mga pinagkunan. Isinulat ng mga dayuhan ang mas lumang pinagkunan gaya ng surbey ni Cole noong 1913 [@cole] at luma na ang kanilang pananalita, kaya ginagamit namin ang mga ito para sa kanilang mga tala, hindi sa kanilang mga paghuhusga.",
@@ -1014,6 +1040,24 @@ $('#peoples-slot').outerHTML = PROVS.map((p, i) => `
   const rows = ['row_name','row_home','row_lang','row_dress','row_values','row_music'];
   $('#cmp').innerHTML = `<thead><tr><th scope="col"></th>${PROVS.map(p => `<th scope="col" style="--pc:var(--${p.col})"><i></i>${p.people}<span>${p.prov}</span></th>`).join('')}</tr></thead>
   <tbody>${rows.map((r, n) => `<tr><th scope="row" data-i18n="${r}"></th>${PROVS.map(p => `<td>${C[p.id].cmp[n]}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  // phone version: question chips, then the five answers to the chosen question
+  const m = $('#cmp-m');
+  m.innerHTML = `<div class="cmp-q" role="tablist" aria-label="Questions">${rows.map((r, n) => `<button type="button" role="tab" id="cmp-tab-${n}" aria-controls="cmp-panel" aria-selected="${n === 0}" tabindex="${n === 0 ? 0 : -1}" data-q="${n}" data-i18n="${r}"></button>`).join('')}</div>
+    <div id="cmp-panel" role="tabpanel" aria-labelledby="cmp-tab-0"><ul class="cmp-list"></ul></div>`;
+  const tabs = $$('.cmp-q button', m);
+  const show = (n, focus) => {
+    tabs.forEach((b, k) => { b.setAttribute('aria-selected', String(k === n)); b.tabIndex = k === n ? 0 : -1; });
+    $('#cmp-panel').setAttribute('aria-labelledby', 'cmp-tab-' + n);
+    $('.cmp-list', m).innerHTML = PROVS.map(p => `<li class="cmp-item" style="--pc:var(--${p.col})"><p class="cmp-who"><i aria-hidden="true"></i>${p.people}<span>${p.prov}</span></p><p class="cmp-a">${C[p.id].cmp[n]}</p></li>`).join('');
+    if (focus) tabs[n].focus();
+  };
+  m.addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) show(+b.dataset.q); });
+  m.addEventListener('keydown', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    const n = +b.dataset.q, k = { ArrowRight: n + 1, ArrowLeft: n - 1, Home: 0, End: rows.length - 1 }[e.key];
+    if (k != null){ e.preventDefault(); show((k + rows.length) % rows.length, true); }
+  });
+  show(0);
 })();
 
 /* ======================= language ======================= */
@@ -2599,6 +2643,14 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 addEventListener('load', measure);
 const mapCap = $('#map-cap'), fadeMapCap = () => mapCap.classList.toggle('faded', scrollY > 24);
 addEventListener('scroll', fadeMapCap, { passive:true }); fadeMapCap();
+// back to top: shown once the reader is within about a screen of the end
+const toTop = $('#totop'), coverH = $('#cover h1');
+const syncTop = () => toTop.classList.toggle('show', scrollY > innerHeight && scrollY + innerHeight * 1.8 >= root.scrollHeight);
+addEventListener('scroll', syncTop, { passive:true }); addEventListener('resize', syncTop); syncTop();
+toTop.addEventListener('click', () => {
+  scrollTo({ top: 0, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+  coverH.tabIndex = -1; coverH.focus({ preventScroll: true });
+});
 const saved = store.get('emag-mode');
 if (!glOK) setMode('flat', 't_gl');
 else if (saved === '3d' || saved === 'flat') setMode(saved);
